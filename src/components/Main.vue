@@ -113,12 +113,32 @@ export default {
       console.log(this.izo);
       this.scene.add(this.izo);
 
+      // this.renderer = new THREE.WebGLRenderTarget(640, 400);
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
       this.renderer.setSize(container.clientWidth, container.clientHeight);
+      this.renderer.setScissor(0, 0, 640, 400);
+      this.renderer.setScissorTest(true);
       container.appendChild(this.renderer.domElement);
+
+      this.renderer.render(this.scene, this.camera);
+
+      var gl = this.renderer.getContext();
+      var pixels = new Uint8Array(640 * 400 * 4);
+      gl.readPixels(
+        0,
+        0,
+        640,
+        400,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        pixels
+      );
+      console.log("pixels:");
+      console.log(pixels); // Uint8Array
     },
     animate: function() {
       requestAnimationFrame(this.animate);
+
       if (this.switch_controls) {
         this.izo.rotation.x = (Math.PI / 180) * this.slider_x;
         this.izo.rotation.y = (Math.PI / 180) * this.slider_y;
