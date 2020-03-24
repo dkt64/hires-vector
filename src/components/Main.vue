@@ -1,151 +1,126 @@
 <template>
   <v-container>
-    <v-row class="text-center">
-      <v-col cols="12">
-        <v-img
-          :src="require('../assets/logo.svg')"
-          class="my-3"
-          contain
-          height="200"
-        />
-      </v-col>
-
-      <v-col class="mb-4">
-        <h1 class="display-2 font-weight-bold mb-3">
-          Welcome to Vuetify
-        </h1>
-
-        <p class="subheading font-weight-regular">
-          For help and collaboration with other Vuetify developers,
-          <br>please join our online
-          <a
-            href="https://community.vuetifyjs.com"
-            target="_blank"
-          >Discord Community</a>
-        </p>
-      </v-col>
-
-      <v-col
-        class="mb-5"
-        cols="12"
-      >
-        <h2 class="headline font-weight-bold mb-3">
-          What's next?
-        </h2>
-
-        <v-row justify="center">
-          <a
-            v-for="(next, i) in whatsNext"
-            :key="i"
-            :href="next.href"
-            class="subheading mx-3"
-            target="_blank"
-          >
-            {{ next.text }}
-          </a>
-        </v-row>
-      </v-col>
-
-      <v-col
-        class="mb-5"
-        cols="12"
-      >
-        <h2 class="headline font-weight-bold mb-3">
-          Important Links
-        </h2>
-
-        <v-row justify="center">
-          <a
-            v-for="(link, i) in importantLinks"
-            :key="i"
-            :href="link.href"
-            class="subheading mx-3"
-            target="_blank"
-          >
-            {{ link.text }}
-          </a>
-        </v-row>
-      </v-col>
-
-      <v-col
-        class="mb-5"
-        cols="12"
-      >
-        <h2 class="headline font-weight-bold mb-3">
-          Ecosystem
-        </h2>
-
-        <v-row justify="center">
-          <a
-            v-for="(eco, i) in ecosystem"
-            :key="i"
-            :href="eco.href"
-            class="subheading mx-3"
-            target="_blank"
-          >
-            {{ eco.text }}
-          </a>
-        </v-row>
-      </v-col>
-    </v-row>
+    <v-card elevation="5" class="mx-auto" outlined>
+      <v-list-item three-line>
+        <v-list-item-content>
+          <div class="overline mb-4">VIEW</div>
+          <v-list-item-title class="headline mb-1">Output window</v-list-item-title>
+          <v-list-item-subtitle>Here we can see input render</v-list-item-subtitle>
+        </v-list-item-content>
+      </v-list-item>
+      <v-row>
+        <v-col>
+          <v-list-item-avatar class="mx-2" tile id="container" style="width: 640px; height: 400px"></v-list-item-avatar>
+        </v-col>
+        <v-col>
+          <v-row>
+            <v-switch v-model="switch_controls" label="Take over angle control" class="mb-5"></v-switch>
+          </v-row>
+          <v-row>
+            <v-slider
+              class="headline mr-5 mb-5"
+              :thumb-size="24"
+              thumb-label="always"
+              v-model="slider_x"
+              min="0"
+              max="360"
+              label="Angle X"
+            ></v-slider>
+          </v-row>
+          <v-row>
+            <v-slider
+              class="headline mr-5 mb-5"
+              :thumb-size="24"
+              thumb-label="always"
+              v-model="slider_y"
+              min="0"
+              max="360"
+              label="Angle Y"
+            ></v-slider>
+          </v-row>
+          <v-row>
+            <v-slider
+              class="headline mr-5"
+              :thumb-size="24"
+              thumb-label="always"
+              v-model="slider_z"
+              min="0"
+              max="360"
+              label="Angle Z"
+            ></v-slider>
+          </v-row>
+        </v-col>
+      </v-row>
+    </v-card>
   </v-container>
 </template>
 
 <script>
-  export default {
-    name: 'Main',
+import * as THREE from "three";
 
-    data: () => ({
-      ecosystem: [
-        {
-          text: 'vuetify-loader',
-          href: 'https://github.com/vuetifyjs/vuetify-loader',
-        },
-        {
-          text: 'github',
-          href: 'https://github.com/vuetifyjs/vuetify',
-        },
-        {
-          text: 'awesome-vuetify',
-          href: 'https://github.com/vuetifyjs/awesome-vuetify',
-        },
-      ],
-      importantLinks: [
-        {
-          text: 'Documentation',
-          href: 'https://vuetifyjs.com',
-        },
-        {
-          text: 'Chat',
-          href: 'https://community.vuetifyjs.com',
-        },
-        {
-          text: 'Made with Vuetify',
-          href: 'https://madewithvuejs.com/vuetify',
-        },
-        {
-          text: 'Twitter',
-          href: 'https://twitter.com/vuetifyjs',
-        },
-        {
-          text: 'Articles',
-          href: 'https://medium.com/vuetify',
-        },
-      ],
-      whatsNext: [
-        {
-          text: 'Explore components',
-          href: 'https://vuetifyjs.com/components/api-explorer',
-        },
-        {
-          text: 'Select a layout',
-          href: 'https://vuetifyjs.com/layout/pre-defined',
-        },
-        {
-          text: 'Frequently Asked Questions',
-          href: 'https://vuetifyjs.com/getting-started/frequently-asked-questions',
-        },
-      ],
-    }),
+export default {
+  name: "Main",
+
+  data: () => ({
+    renderer: null,
+    scene: null,
+    camera: null,
+    izo: null,
+    slider_x: 0,
+    slider_y: 0,
+    slider_z: 0,
+    switch_controls: false
+  }),
+  methods: {
+    init: function() {
+      let container = document.getElementById("container");
+
+      this.camera = new THREE.PerspectiveCamera(
+        60,
+        container.clientWidth / container.clientHeight,
+        0.1,
+        1000
+      );
+      this.camera.position.z = 200;
+
+      this.scene = new THREE.Scene();
+
+      const light = new THREE.AmbientLight(0xffffff);
+      // light.position.set(0, 0, 1000);
+      this.scene.add(light);
+
+      var izoGeo = new THREE.IcosahedronGeometry(60);
+      var izoMat = new THREE.MeshPhongMaterial({
+        color: 0xffffff,
+        vertexColors: THREE.FaceColors
+      });
+      for (var i = 0; i < izoGeo.faces.length; i++) {
+        //izoGeo.faces[i].color.setHex((c64colors[i & 0x0f] * (i + 1)) & 0xffff00 + i);
+        izoGeo.faces[i].color.setHex(
+          0xa050a0 + (i * 4 + 1) + (i * 4 + 1) * 256 + (i * 4 + 1) * 256 * 256
+        );
+      }
+      this.izo = new THREE.Mesh(izoGeo, izoMat);
+      this.izo.name = "izo";
+      console.log(this.izo.name);
+      console.log(this.izo);
+      this.scene.add(this.izo);
+
+      this.renderer = new THREE.WebGLRenderer({ antialias: true });
+      this.renderer.setSize(container.clientWidth, container.clientHeight);
+      container.appendChild(this.renderer.domElement);
+    },
+    animate: function() {
+      requestAnimationFrame(this.animate);
+      this.izo.rotation.x += 0.01;
+      this.izo.rotation.y += 0.01;
+      this.renderer.render(this.scene, this.camera);
+    }
+  },
+  mounted() {
+    console.log("Mounted()");
+    this.init();
+    this.animate();
   }
+};
 </script>

@@ -1,10 +1,6 @@
 <template>
   <v-app>
-    <v-app-bar
-      app
-      color="primary"
-      dark
-    >
+    <v-app-bar app color="primary" dark>
       <div class="d-flex align-center">
         <v-img
           alt="Vuetify Logo"
@@ -26,35 +22,33 @@
       </div>
 
       <v-spacer></v-spacer>
-
-      <v-btn
-        href="https://github.com/dkt64/hires-vector"
-        target="_blank"
-        text
-      >
+      <v-switch v-model="$vuetify.theme.dark" label="Dark theme" style="margin-top: 25px"></v-switch>
+      <v-spacer></v-spacer>
+ 
+      <v-btn href="https://github.com/dkt64/hires-vector" target="_blank" text>
         <span class="mr-2">Latest Release</span>
         <v-icon>mdi-open-in-new</v-icon>
       </v-btn>
     </v-app-bar>
 
     <v-content>
-      <Main/>
+      <Main />
     </v-content>
   </v-app>
 </template>
 
 <script>
-import Main from './components/Main';
+import Main from "./components/Main";
 
 export default {
-  name: 'App',
+  name: "App",
 
   components: {
-    Main,
+    Main
   },
 
   data: () => ({
     //
-  }),
+  })
 };
 </script>
