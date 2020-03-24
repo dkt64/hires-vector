@@ -14,7 +14,11 @@
         </v-col>
         <v-col>
           <v-row>
-            <v-switch v-model="switch_controls" label="Take over angle control" class="mb-5"></v-switch>
+            <v-switch
+              v-model="switch_controls"
+              label="Take over angle control"
+              class="overline mb-5"
+            ></v-switch>
           </v-row>
           <v-row>
             <v-slider
@@ -22,6 +26,7 @@
               :thumb-size="24"
               thumb-label="always"
               v-model="slider_x"
+              step="1"
               min="0"
               max="360"
               label="Angle X"
@@ -33,6 +38,7 @@
               :thumb-size="24"
               thumb-label="always"
               v-model="slider_y"
+              step="1"
               min="0"
               max="360"
               label="Angle Y"
@@ -44,6 +50,7 @@
               :thumb-size="24"
               thumb-label="always"
               v-model="slider_z"
+              step="1"
               min="0"
               max="360"
               label="Angle Z"
@@ -112,8 +119,19 @@ export default {
     },
     animate: function() {
       requestAnimationFrame(this.animate);
-      this.izo.rotation.x += 0.01;
-      this.izo.rotation.y += 0.01;
+      if (this.switch_controls) {
+        this.izo.rotation.x = (Math.PI / 180) * this.slider_x;
+        this.izo.rotation.y = (Math.PI / 180) * this.slider_y;
+        this.izo.rotation.z = (Math.PI / 180) * this.slider_z;
+      } else {
+        this.izo.rotation.x += 0.03;
+        this.izo.rotation.y += 0.01;
+        this.izo.rotation.z += 0.02;
+
+        this.slider_x = ((this.izo.rotation.x / Math.PI) * 180) % 360;
+        this.slider_y = ((this.izo.rotation.y / Math.PI) * 180) % 360;
+        this.slider_z = ((this.izo.rotation.z / Math.PI) * 180) % 360;
+      }
       this.renderer.render(this.scene, this.camera);
     }
   },
