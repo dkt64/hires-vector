@@ -76,7 +76,8 @@ export default {
     slider_x: 0,
     slider_y: 0,
     slider_z: 0,
-    switch_controls: false
+    switch_controls: false,
+    pixels: null
   }),
   methods: {
     init: function() {
@@ -113,7 +114,6 @@ export default {
       console.log(this.izo);
       this.scene.add(this.izo);
 
-      // this.renderer = new THREE.WebGLRenderTarget(640, 400);
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
       this.renderer.setSize(container.clientWidth, container.clientHeight);
       this.renderer.setScissor(0, 0, 640, 400);
@@ -123,7 +123,7 @@ export default {
       this.renderer.render(this.scene, this.camera);
 
       var gl = this.renderer.getContext();
-      var pixels = new Uint8Array(640 * 400 * 4);
+      this.pixels = new Uint8Array(640 * 400 * 4);
       gl.readPixels(
         0,
         0,
@@ -131,10 +131,10 @@ export default {
         400,
         gl.RGBA,
         gl.UNSIGNED_BYTE,
-        pixels
+        this.pixels
       );
-      console.log("pixels:");
-      console.log(pixels); // Uint8Array
+      // console.log("pixels:");
+      // console.log(pixels); // Uint8Array
     },
     animate: function() {
       requestAnimationFrame(this.animate);
@@ -144,15 +144,27 @@ export default {
         this.izo.rotation.y = (Math.PI / 180) * this.slider_y;
         this.izo.rotation.z = (Math.PI / 180) * this.slider_z;
       } else {
-        this.izo.rotation.x += 0.03;
-        this.izo.rotation.y += 0.01;
-        this.izo.rotation.z += 0.02;
+        this.izo.rotation.x += 0.04;
+        this.izo.rotation.y += 0.02;
+        this.izo.rotation.z -= 0.02;
 
-        this.slider_x = ((this.izo.rotation.x / Math.PI) * 180) % 360;
-        this.slider_y = ((this.izo.rotation.y / Math.PI) * 180) % 360;
-        this.slider_z = ((this.izo.rotation.z / Math.PI) * 180) % 360;
+        this.slider_x = Math.abs(((this.izo.rotation.x / Math.PI) * 180) % 360);
+        this.slider_y = Math.abs(((this.izo.rotation.y / Math.PI) * 180) % 360);
+        this.slider_z = Math.abs(((this.izo.rotation.z / Math.PI) * 180) % 360);
       }
       this.renderer.render(this.scene, this.camera);
+
+      var gl = this.renderer.getContext();
+      gl.readPixels(
+        0,
+        0,
+        640,
+        400,
+        gl.RGBA,
+        gl.UNSIGNED_BYTE,
+        this.pixels
+      );
+
     }
   },
   mounted() {
