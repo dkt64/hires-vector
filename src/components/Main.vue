@@ -1,16 +1,14 @@
 <template>
   <v-container>
-    <v-card elevation="5" class="mx-auto" outlined>
-      <v-list-item three-line>
-        <v-list-item-content>
-          <div class="overline mb-4">VIEW</div>
-          <v-list-item-title class="headline mb-1">Output window</v-list-item-title>
-          <v-list-item-subtitle>Here we can see input render</v-list-item-subtitle>
-        </v-list-item-content>
-      </v-list-item>
+    <v-row>
       <v-row>
         <v-col>
-          <v-list-item-avatar class="mx-2" tile id="container" style="width: 640px; height: 400px"></v-list-item-avatar>
+          <v-list-item-title class="headline mb-1">Input window</v-list-item-title>
+          <div id="container" style="width: 320px; height: 200px"></div>
+        </v-col>
+        <v-col>
+          <v-list-item-title class="headline mb-1">Hires window</v-list-item-title>
+          <canvas id="canvasHires" width="320" height="200"></canvas>
         </v-col>
         <v-col>
           <v-row>
@@ -58,7 +56,7 @@
           </v-row>
         </v-col>
       </v-row>
-    </v-card>
+    </v-row>
   </v-container>
 </template>
 
@@ -77,7 +75,11 @@ export default {
     slider_y: 0,
     slider_z: 0,
     switch_controls: false,
-    pixels: null
+    pixels: null,
+    glContext: null,
+    hiresData: null,
+    canvasHires: null,
+    contextHires: null
   }),
   methods: {
     init: function() {
@@ -116,25 +118,34 @@ export default {
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
       this.renderer.setSize(container.clientWidth, container.clientHeight);
-      this.renderer.setScissor(0, 0, 640, 400);
+      this.renderer.setScissor(0, 0, 320, 200);
       this.renderer.setScissorTest(true);
       container.appendChild(this.renderer.domElement);
 
       this.renderer.render(this.scene, this.camera);
 
-      var gl = this.renderer.getContext();
-      this.pixels = new Uint8Array(640 * 400 * 4);
-      gl.readPixels(
+      this.glContext = this.renderer.getContext();
+      this.pixels = new Uint8Array(320 * 200 * 4);
+      this.glContext.readPixels(
         0,
         0,
-        640,
-        400,
-        gl.RGBA,
-        gl.UNSIGNED_BYTE,
+        320,
+        200,
+        this.glContext.RGBA,
+        this.glContext.UNSIGNED_BYTE,
         this.pixels
       );
-      // console.log("pixels:");
-      // console.log(pixels); // Uint8Array
+      console.log("pixels:");
+      console.log(this.pixels); // Uint8Array
+
+      this.canvasHires = document.getElementById("canvasHires");
+      if (this.canvasHires.getContext) {
+        this.contextHires = this.canvasHires.getContext("2d");
+        console.log("Got 2d canvas contex:");
+        console.log(this.contextHires);
+      } else {
+        console.log("No 2d canvas. Sorry...");
+      }
     },
     animate: function() {
       requestAnimationFrame(this.animate);
@@ -154,17 +165,30 @@ export default {
       }
       this.renderer.render(this.scene, this.camera);
 
-      var gl = this.renderer.getContext();
-      gl.readPixels(
+      this.glContext.readPixels(
         0,
         0,
-        640,
-        400,
-        gl.RGBA,
-        gl.UNSIGNED_BYTE,
+        320,
+        200,
+        this.glContext.RGBA,
+        this.glContext.UNSIGNED_BYTE,
         this.pixels
       );
 
+      this.hiresData = this.contextHires.getImageData(0, 0, 320, 200);
+
+      var k = 0;
+      for (var j = 200; j > 0; --j) {
+        for (var i = 0; i < 320 * 4; i++) {
+          this.hiresData.data[k++] = this.pixels[j * 320 * 4 + i];
+        }
+      }
+
+      // for (var i = 0; i < 320 * 200 * 4; i++) {
+      //   this.hiresData.data[i] = this.pixels[i];
+      // }
+
+      this.contextHires.putImageData(this.hiresData, 0, 0);
     }
   },
   mounted() {
