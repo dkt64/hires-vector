@@ -12,11 +12,7 @@
         </v-col>
         <v-col>
           <v-row>
-            <v-switch
-              v-model="switch_controls"
-              label="Take over angle control"
-              class="overline mb-5"
-            ></v-switch>
+            <v-switch v-model="switch_controls" label="Animate" class="overline mb-5"></v-switch>
           </v-row>
           <v-row>
             <v-slider
@@ -150,7 +146,7 @@ export default {
     animate: function() {
       requestAnimationFrame(this.animate);
 
-      if (this.switch_controls) {
+      if (!this.switch_controls) {
         this.izo.rotation.x = (Math.PI / 180) * this.slider_x;
         this.izo.rotation.y = (Math.PI / 180) * this.slider_y;
         this.izo.rotation.z = (Math.PI / 180) * this.slider_z;
@@ -183,10 +179,6 @@ export default {
           this.hiresData.data[k++] = this.pixels[j * 320 * 4 + i];
         }
       }
-
-      // for (var i = 0; i < 320 * 200 * 4; i++) {
-      //   this.hiresData.data[i] = this.pixels[i];
-      // }
 
       this.contextHires.putImageData(this.hiresData, 0, 0);
     }
