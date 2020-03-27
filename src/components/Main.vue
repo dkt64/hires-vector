@@ -1,57 +1,59 @@
 <template>
   <v-container>
     <v-row>
-      <v-row>
-        <v-col>
-          <v-list-item-title class="headline mb-1">Input window</v-list-item-title>
-          <div id="container" style="width: 320px; height: 200px"></div>
-        </v-col>
-        <v-col>
-          <v-list-item-title class="headline mb-1">Hires window</v-list-item-title>
-          <canvas id="canvasHires" width="320" height="200"></canvas>
-        </v-col>
-        <v-col>
-          <v-row>
-            <v-switch v-model="switch_controls" label="Animate" class="overline mb-5"></v-switch>
-          </v-row>
-          <v-row>
-            <v-slider
-              class="headline mr-5 mb-5"
-              :thumb-size="24"
-              thumb-label="always"
-              v-model="slider_x"
-              step="1"
-              min="0"
-              max="360"
-              label="Angle X"
-            ></v-slider>
-          </v-row>
-          <v-row>
-            <v-slider
-              class="headline mr-5 mb-5"
-              :thumb-size="24"
-              thumb-label="always"
-              v-model="slider_y"
-              step="1"
-              min="0"
-              max="360"
-              label="Angle Y"
-            ></v-slider>
-          </v-row>
-          <v-row>
-            <v-slider
-              class="headline mr-5"
-              :thumb-size="24"
-              thumb-label="always"
-              v-model="slider_z"
-              step="1"
-              min="0"
-              max="360"
-              label="Angle Z"
-            ></v-slider>
-          </v-row>
-        </v-col>
-      </v-row>
+      <v-col>
+        <v-list-item-title class="headline mb-1">Input window</v-list-item-title>
+        <div v-on:click="clickOnContainer" id="canvasGL" style="width: 320px; height: 200px"></div>
+      </v-col>
+      <v-col>
+        <v-list-item-title class="headline mb-1">Hires window</v-list-item-title>
+        <canvas id="canvasHires" width="320" height="200"></canvas>
+      </v-col>
+      <v-col>
+        <v-row>
+          <v-list-item-title class="headline mb-1">Background color</v-list-item-title>
+          <v-color-picker hide-canvas="true" v-model="colorPickerBackground"></v-color-picker>
+        </v-row>
+        <v-row>
+          <v-switch v-model="switch_controls" label="Animate" class="overline mb-5"></v-switch>
+        </v-row>
+        <v-row>
+          <v-slider
+            class="headline mr-5 mb-5"
+            :thumb-size="24"
+            thumb-label="always"
+            v-model="slider_x"
+            step="1"
+            min="0"
+            max="360"
+            label="Angle X"
+          ></v-slider>
+        </v-row>
+        <v-row>
+          <v-slider
+            class="headline mr-5 mb-5"
+            :thumb-size="24"
+            thumb-label="always"
+            v-model="slider_y"
+            step="1"
+            min="0"
+            max="360"
+            label="Angle Y"
+          ></v-slider>
+        </v-row>
+        <v-row>
+          <v-slider
+            class="headline mr-5"
+            :thumb-size="24"
+            thumb-label="always"
+            v-model="slider_z"
+            step="1"
+            min="0"
+            max="360"
+            label="Angle Z"
+          ></v-slider>
+        </v-row>
+      </v-col>
     </v-row>
   </v-container>
 </template>
@@ -71,19 +73,36 @@ export default {
     slider_y: 0,
     slider_z: 0,
     switch_controls: false,
-    pixels: null,
-    glContext: null,
-    hiresData: null,
+    pixelsGL: null,
+    pixelsHires: null,
+    canvasGL: null,
     canvasHires: null,
-    contextHires: null
+    contextGL: null,
+    contextHires: null,
+    colorPickerBackground: null
   }),
   methods: {
+    clickOnContainer: function(event) {
+      console.log("mouse clicked ", event);
+      console.log("this.canvasGL ", this.canvasGL);
+      var x = event.layerX - this.canvasGL.offsetLeft;
+      var y = event.layerY - this.canvasGL.offsetTop;
+      console.log("mouse clicked at ", x, " ", y);
+
+      var offset = x * 4 + y * 320 * 4;
+      this.colorPickerBackground.rgba.r = this.pixelsGL[offset + 0];
+      this.colorPickerBackground.rgba.g = this.pixelsGL[offset + 1];
+      this.colorPickerBackground.rgba.b = this.pixelsGL[offset + 2];
+      this.colorPickerBackground.rgba.a = 255 / this.pixelsGL[offset + 3];
+
+      console.log("this.colorPickerBackground: ", this.colorPickerBackground);
+    },
     init: function() {
-      let container = document.getElementById("container");
+      this.canvasGL = document.getElementById("canvasGL");
 
       this.camera = new THREE.PerspectiveCamera(
         60,
-        container.clientWidth / container.clientHeight,
+        this.canvasGL.clientWidth / this.canvasGL.clientHeight,
         0.1,
         1000
       );
@@ -103,7 +122,7 @@ export default {
       for (var i = 0; i < izoGeo.faces.length; i++) {
         //izoGeo.faces[i].color.setHex((c64colors[i & 0x0f] * (i + 1)) & 0xffff00 + i);
         izoGeo.faces[i].color.setHex(
-          0xa050a0 + (i * 4 + 1) + (i * 4 + 1) * 256 + (i * 4 + 1) * 256 * 256
+          0x202020 + (i * 8 + 1) + (i * 8 + 1) * 256 + (i * 8 + 1) * 256 * 256
         );
       }
       this.izo = new THREE.Mesh(izoGeo, izoMat);
@@ -113,26 +132,29 @@ export default {
       this.scene.add(this.izo);
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
-      this.renderer.setSize(container.clientWidth, container.clientHeight);
+      this.renderer.setSize(
+        this.canvasGL.clientWidth,
+        this.canvasGL.clientHeight
+      );
       this.renderer.setScissor(0, 0, 320, 200);
       this.renderer.setScissorTest(true);
-      container.appendChild(this.renderer.domElement);
+      this.canvasGL.appendChild(this.renderer.domElement);
 
       this.renderer.render(this.scene, this.camera);
 
-      this.glContext = this.renderer.getContext();
-      this.pixels = new Uint8Array(320 * 200 * 4);
-      this.glContext.readPixels(
+      this.contextGL = this.renderer.getContext();
+      this.pixelsGL = new Uint8Array(320 * 200 * 4);
+      this.contextGL.readPixels(
         0,
         0,
         320,
         200,
-        this.glContext.RGBA,
-        this.glContext.UNSIGNED_BYTE,
-        this.pixels
+        this.contextGL.RGBA,
+        this.contextGL.UNSIGNED_BYTE,
+        this.pixelsGL
       );
-      console.log("pixels:");
-      console.log(this.pixels); // Uint8Array
+      console.log("pixelsGL:");
+      console.log(this.pixelsGL); // Uint8Array
 
       this.canvasHires = document.getElementById("canvasHires");
       if (this.canvasHires.getContext) {
@@ -142,6 +164,13 @@ export default {
       } else {
         console.log("No 2d canvas. Sorry...");
       }
+
+      this.colorPickerBackground.rgba.r = this.pixelsGL[0];
+      this.colorPickerBackground.rgba.g = this.pixelsGL[1];
+      this.colorPickerBackground.rgba.b = this.pixelsGL[2];
+      this.colorPickerBackground.rgba.a = 255 / this.pixelsGL[3];
+
+      console.log("this.colorPickerBackground: ", this.colorPickerBackground);
     },
     animate: function() {
       requestAnimationFrame(this.animate);
@@ -161,26 +190,26 @@ export default {
       }
       this.renderer.render(this.scene, this.camera);
 
-      this.glContext.readPixels(
+      this.contextGL.readPixels(
         0,
         0,
         320,
         200,
-        this.glContext.RGBA,
-        this.glContext.UNSIGNED_BYTE,
-        this.pixels
+        this.contextGL.RGBA,
+        this.contextGL.UNSIGNED_BYTE,
+        this.pixelsGL
       );
 
-      this.hiresData = this.contextHires.getImageData(0, 0, 320, 200);
+      this.pixelsHires = this.contextHires.getImageData(0, 0, 320, 200);
 
       var k = 0;
       for (var j = 200; j > 0; --j) {
         for (var i = 0; i < 320 * 4; i++) {
-          this.hiresData.data[k++] = this.pixels[j * 320 * 4 + i];
+          this.pixelsHires.data[k++] = this.pixelsGL[j * 320 * 4 + i];
         }
       }
 
-      this.contextHires.putImageData(this.hiresData, 0, 0);
+      this.contextHires.putImageData(this.pixelsHires, 0, 0);
     }
   },
   mounted() {
