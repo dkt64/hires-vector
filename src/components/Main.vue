@@ -2,20 +2,17 @@
   <v-container>
     <v-row>
       <v-col>
-        <v-list-item-title class="headline mb-1">Input window</v-list-item-title>
+        <v-list-item-title class="headline">Input window</v-list-item-title>
         <div v-on:click="clickOnContainer" id="canvasGL" style="width: 320px; height: 200px"></div>
+        <v-chip :text-color="backgroundColorText" :color="backgroundColorBack" class="mt-1">Background color</v-chip>
       </v-col>
       <v-col>
-        <v-list-item-title class="headline mb-1">Hires window</v-list-item-title>
+        <v-list-item-title class="headline">Hires window</v-list-item-title>
         <canvas id="canvasHires" width="320" height="200"></canvas>
       </v-col>
       <v-col>
         <v-row>
-          <v-list-item-title class="headline mb-1">Background color</v-list-item-title>
-          <v-color-picker hide-canvas="true" v-model="colorPickerBackground"></v-color-picker>
-        </v-row>
-        <v-row>
-          <v-switch v-model="switch_controls" label="Animate" class="overline mb-5"></v-switch>
+          <v-switch v-model="switch_controls" label="Animate" class="headline"></v-switch>
         </v-row>
         <v-row>
           <v-slider
@@ -79,9 +76,24 @@ export default {
     canvasHires: null,
     contextGL: null,
     contextHires: null,
-    colorPickerBackground: null
+    backgroundColor: [0, 0, 0, 1],
+    backgroundColorBack: "#000000ff",
+    backgroundColorText: "#ffffffff"
   }),
   methods: {
+    colorString: function(r, g, b, a) {
+      return (
+        "rgba(" +
+        r.toString() +
+        "," +
+        g.toString() +
+        "," +
+        b.toString() +
+        "," +
+        (255 / a).toString() +
+        ")"
+      );
+    },
     clickOnContainer: function(event) {
       console.log("mouse clicked ", event);
       console.log("this.canvasGL ", this.canvasGL);
@@ -90,12 +102,35 @@ export default {
       console.log("mouse clicked at ", x, " ", y);
 
       var offset = x * 4 + y * 320 * 4;
-      this.colorPickerBackground.rgba.r = this.pixelsGL[offset + 0];
-      this.colorPickerBackground.rgba.g = this.pixelsGL[offset + 1];
-      this.colorPickerBackground.rgba.b = this.pixelsGL[offset + 2];
-      this.colorPickerBackground.rgba.a = 255 / this.pixelsGL[offset + 3];
 
-      console.log("this.colorPickerBackground: ", this.colorPickerBackground);
+      this.backgroundColor[0] = this.pixelsGL[offset + 0];
+      this.backgroundColor[1] = this.pixelsGL[offset + 1];
+      this.backgroundColor[2] = this.pixelsGL[offset + 2];
+      this.backgroundColor[3] = this.pixelsGL[offset + 3];
+
+      this.backgroundColorBack = this.colorString(
+        this.backgroundColor[0],
+        this.backgroundColor[1],
+        this.backgroundColor[2],
+        this.backgroundColor[3]
+      );
+
+      this.backgroundColorText = this.colorString(
+        this.backgroundColor[0] ^ 0x80,
+        this.backgroundColor[1] ^ 0x80,
+        this.backgroundColor[2] ^ 0x80,
+        this.backgroundColor[3]
+      );
+
+      console.log(
+        "New background color: " +
+          this.colorString(
+            this.backgroundColor[0],
+            this.backgroundColor[1],
+            this.backgroundColor[2],
+            this.backgroundColor[3]
+          )
+      );
     },
     init: function() {
       this.canvasGL = document.getElementById("canvasGL");
@@ -165,12 +200,10 @@ export default {
         console.log("No 2d canvas. Sorry...");
       }
 
-      this.colorPickerBackground.rgba.r = this.pixelsGL[0];
-      this.colorPickerBackground.rgba.g = this.pixelsGL[1];
-      this.colorPickerBackground.rgba.b = this.pixelsGL[2];
-      this.colorPickerBackground.rgba.a = 255 / this.pixelsGL[3];
-
-      console.log("this.colorPickerBackground: ", this.colorPickerBackground);
+      this.backgroundColor[0] = this.pixelsGL[0];
+      this.backgroundColor[1] = this.pixelsGL[1];
+      this.backgroundColor[2] = this.pixelsGL[2];
+      this.backgroundColor[3] = this.pixelsGL[3];
     },
     animate: function() {
       requestAnimationFrame(this.animate);
@@ -216,6 +249,6 @@ export default {
     console.log("Mounted()");
     this.init();
     this.animate();
-  }
+  },
 };
 </script>
