@@ -4,7 +4,11 @@
       <v-col>
         <v-list-item-title class="headline">Input window</v-list-item-title>
         <div v-on:click="clickOnContainer" id="canvasGL" style="width: 320px; height: 200px"></div>
-        <v-chip :text-color="backgroundColorText" :color="backgroundColorBack" class="mt-1">Background color</v-chip>
+        <v-chip
+          :text-color="backgroundColorText"
+          :color="backgroundColorBack"
+          class="mt-1"
+        >Background color</v-chip>
       </v-col>
       <v-col>
         <v-list-item-title class="headline">Hires window</v-list-item-title>
@@ -70,12 +74,6 @@ export default {
     slider_y: 0,
     slider_z: 0,
     switch_controls: false,
-    pixelsGL: null,
-    pixelsHires: null,
-    canvasGL: null,
-    canvasHires: null,
-    contextGL: null,
-    contextHires: null,
     backgroundColor: [0, 0, 0, 1],
     backgroundColorBack: "#000000ff",
     backgroundColorText: "#ffffffff"
@@ -95,18 +93,35 @@ export default {
       );
     },
     clickOnContainer: function(event) {
+
+      var canvasGL = document.getElementById("canvasGL");
+
+      var contextGL = this.renderer.getContext();
+
+      var pixelsGL = new Uint8Array(320 * 200 * 4);
+
+      contextGL.readPixels(
+        0,
+        0,
+        320,
+        200,
+        contextGL.RGBA,
+        contextGL.UNSIGNED_BYTE,
+        pixelsGL
+      );
+
       console.log("mouse clicked ", event);
-      console.log("this.canvasGL ", this.canvasGL);
-      var x = event.layerX - this.canvasGL.offsetLeft;
-      var y = event.layerY - this.canvasGL.offsetTop;
+      console.log("this.canvasGL ", canvasGL);
+      var x = event.layerX - canvasGL.offsetLeft;
+      var y = event.layerY - canvasGL.offsetTop;
       console.log("mouse clicked at ", x, " ", y);
 
       var offset = x * 4 + y * 320 * 4;
 
-      this.backgroundColor[0] = this.pixelsGL[offset + 0];
-      this.backgroundColor[1] = this.pixelsGL[offset + 1];
-      this.backgroundColor[2] = this.pixelsGL[offset + 2];
-      this.backgroundColor[3] = this.pixelsGL[offset + 3];
+      this.backgroundColor[0] = pixelsGL[offset + 0];
+      this.backgroundColor[1] = pixelsGL[offset + 1];
+      this.backgroundColor[2] = pixelsGL[offset + 2];
+      this.backgroundColor[3] = pixelsGL[offset + 3];
 
       this.backgroundColorBack = this.colorString(
         this.backgroundColor[0],
@@ -133,11 +148,10 @@ export default {
       );
     },
     init: function() {
-      this.canvasGL = document.getElementById("canvasGL");
-
+      var canvasGL = document.getElementById("canvasGL");
       this.camera = new THREE.PerspectiveCamera(
         60,
-        this.canvasGL.clientWidth / this.canvasGL.clientHeight,
+        canvasGL.clientWidth / canvasGL.clientHeight,
         0.1,
         1000
       );
@@ -168,42 +182,14 @@ export default {
 
       this.renderer = new THREE.WebGLRenderer({ antialias: true });
       this.renderer.setSize(
-        this.canvasGL.clientWidth,
-        this.canvasGL.clientHeight
+        canvasGL.clientWidth,
+        canvasGL.clientHeight
       );
       this.renderer.setScissor(0, 0, 320, 200);
       this.renderer.setScissorTest(true);
-      this.canvasGL.appendChild(this.renderer.domElement);
+      canvasGL.appendChild(this.renderer.domElement);
 
       this.renderer.render(this.scene, this.camera);
-
-      this.contextGL = this.renderer.getContext();
-      this.pixelsGL = new Uint8Array(320 * 200 * 4);
-      this.contextGL.readPixels(
-        0,
-        0,
-        320,
-        200,
-        this.contextGL.RGBA,
-        this.contextGL.UNSIGNED_BYTE,
-        this.pixelsGL
-      );
-      console.log("pixelsGL:");
-      console.log(this.pixelsGL); // Uint8Array
-
-      this.canvasHires = document.getElementById("canvasHires");
-      if (this.canvasHires.getContext) {
-        this.contextHires = this.canvasHires.getContext("2d");
-        console.log("Got 2d canvas contex:");
-        console.log(this.contextHires);
-      } else {
-        console.log("No 2d canvas. Sorry...");
-      }
-
-      this.backgroundColor[0] = this.pixelsGL[0];
-      this.backgroundColor[1] = this.pixelsGL[1];
-      this.backgroundColor[2] = this.pixelsGL[2];
-      this.backgroundColor[3] = this.pixelsGL[3];
     },
     animate: function() {
       requestAnimationFrame(this.animate);
@@ -223,32 +209,38 @@ export default {
       }
       this.renderer.render(this.scene, this.camera);
 
-      this.contextGL.readPixels(
+      var contextGL = this.renderer.getContext();
+
+      var pixelsGL = new Uint8Array(320 * 200 * 4);
+
+      contextGL.readPixels(
         0,
         0,
         320,
         200,
-        this.contextGL.RGBA,
-        this.contextGL.UNSIGNED_BYTE,
-        this.pixelsGL
+        contextGL.RGBA,
+        contextGL.UNSIGNED_BYTE,
+        pixelsGL
       );
 
-      this.pixelsHires = this.contextHires.getImageData(0, 0, 320, 200);
+      var canvasHires = document.getElementById("canvasHires");
+      var contextHires = canvasHires.getContext("2d");
 
+      var pixelsHires = contextHires.getImageData(0, 0, 320, 200);
       var k = 0;
       for (var j = 200; j > 0; --j) {
         for (var i = 0; i < 320 * 4; i++) {
-          this.pixelsHires.data[k++] = this.pixelsGL[j * 320 * 4 + i];
+          pixelsHires.data[k++] = pixelsGL[j * 320 * 4 + i];
         }
       }
 
-      this.contextHires.putImageData(this.pixelsHires, 0, 0);
+      contextHires.putImageData(pixelsHires, 0, 0);
     }
   },
   mounted() {
     console.log("Mounted()");
     this.init();
     this.animate();
-  },
+  }
 };
 </script>
