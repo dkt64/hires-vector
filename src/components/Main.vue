@@ -51,7 +51,10 @@
       <v-switch v-model="switch_controls" label="Animate"></v-switch>
     </v-row>
     <v-row>
-      <v-chip :text-color="backgroundColorText" :color="backgroundColorBack">Background color [mouse click]</v-chip>
+      <v-chip
+        :text-color="backgroundColorText"
+        :color="backgroundColorBack"
+      >Background color [mouse click]</v-chip>
     </v-row>
   </v-container>
 </template>
@@ -99,6 +102,7 @@ export default {
       console.log("this.canvasGL ", canvasGL);
       var x = event.layerX - canvasGL.offsetLeft;
       var y = event.layerY - canvasGL.offsetTop;
+      y = 200 - y;
       console.log("mouse clicked at ", x, " ", y);
 
       var offset = x * 4 + y * 320 * 4;
