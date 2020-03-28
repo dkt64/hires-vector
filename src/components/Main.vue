@@ -60,15 +60,28 @@
 </template>
 
 <script>
+// ================================================================================================
+// Importy oraz globalne zmienne
+// ================================================================================================
 import * as THREE from "three";
 
 var pixelsGL = new Uint8Array(320 * 200 * 4);
 var changeBackColor = false;
-var backgroundColor = [0, 0, 0, 1];
+var backgroundColorRGBA = [0, 0, 0, 1];
+
+// Przygotowanie buforów na pixele
+// ------------------------------------------------------------------------------------------
+// var pixelsHires = contextHires.getImageData(0, 0, 320, 200);
+var pixelsGLInverted = new ImageData(320, 200);
+var pixelsHires = new ImageData(320, 200);
+var pixelsDiff = new ImageData(320, 200);
 
 export default {
   name: "Main",
 
+  // ================================================================================================
+  // Zmienne VUE
+  // ================================================================================================
   data: () => ({
     renderer: null,
     scene: null,
@@ -81,6 +94,10 @@ export default {
     backgroundColorBack: "#000000ff",
     backgroundColorText: "#ffffffff"
   }),
+
+  // ================================================================================================
+  // Moje funkcje
+  // ================================================================================================
   methods: {
     colorString: function(r, g, b, a) {
       return (
@@ -95,6 +112,10 @@ export default {
         ")"
       );
     },
+
+    // --------------------------------------------------------------------------------------------
+    // clickOnGL - kliknięcie na context GL
+    // --------------------------------------------------------------------------------------------
     clickOnGL: function(event) {
       var canvasGL = document.getElementById("canvasGL");
 
@@ -108,23 +129,26 @@ export default {
       var offset = x * 4 + y * 320 * 4;
       console.log("offset: " + offset);
 
-      backgroundColor[0] = pixelsGL[offset + 0];
-      backgroundColor[1] = pixelsGL[offset + 1];
-      backgroundColor[2] = pixelsGL[offset + 2];
-      backgroundColor[3] = pixelsGL[offset + 3];
+      backgroundColorRGBA[0] = pixelsGL[offset + 0];
+      backgroundColorRGBA[1] = pixelsGL[offset + 1];
+      backgroundColorRGBA[2] = pixelsGL[offset + 2];
+      backgroundColorRGBA[3] = pixelsGL[offset + 3];
 
       console.log(
         "New background color: " +
           this.colorString(
-            backgroundColor[0],
-            backgroundColor[1],
-            backgroundColor[2],
-            backgroundColor[3]
+            backgroundColorRGBA[0],
+            backgroundColorRGBA[1],
+            backgroundColorRGBA[2],
+            backgroundColorRGBA[3]
           )
       );
 
       changeBackColor = true;
     },
+    // --------------------------------------------------------------------------------------------
+    // init - wywoływana w Mounted()
+    // --------------------------------------------------------------------------------------------
     init: function() {
       var canvasGL = document.getElementById("canvasGL");
       this.camera = new THREE.PerspectiveCamera(
@@ -146,7 +170,7 @@ export default {
         color: 0xffffff,
         vertexColors: THREE.FaceColors
       });
-      for (var i = 0; i < izoGeo.faces.length; i++) {
+      for (let i = 0; i < izoGeo.faces.length; i++) {
         //izoGeo.faces[i].color.setHex((c64colors[i & 0x0f] * (i + 1)) & 0xffff00 + i);
         izoGeo.faces[i].color.setHex(
           0x202020 + (i * 8 + 1) + (i * 8 + 1) * 256 + (i * 8 + 1) * 256 * 256
@@ -166,7 +190,12 @@ export default {
 
       this.renderer.render(this.scene, this.camera);
     },
+    // --------------------------------------------------------------------------------------------
+    // animate - główna pętla renderingu
+    // --------------------------------------------------------------------------------------------
     animate: function() {
+      // Obsługa Three.js
+      // ------------------------------------------------------------------------------------------
       requestAnimationFrame(this.animate);
 
       if (!this.switch_controls) {
@@ -184,6 +213,8 @@ export default {
       }
       this.renderer.render(this.scene, this.camera);
 
+      // Pobranie kontekstu i odczyt pixeli
+      // ------------------------------------------------------------------------------------------
       var contextGL = this.renderer.getContext();
 
       contextGL.readPixels(
@@ -202,31 +233,147 @@ export default {
       var canvasDiff = document.getElementById("canvasDiff");
       var contextDiff = canvasDiff.getContext("2d");
 
-      var pixelsHires = contextHires.getImageData(0, 0, 320, 200);
+      // Obracamy do góry nogami (pixele GL liczone są w Y od dołu)
+      // ------------------------------------------------------------------------------------------
       var k = 0;
-      for (var j = 200; j > 0; --j) {
-        for (var i = 0; i < 320 * 4; i++) {
-          pixelsHires.data[k++] = pixelsGL[j * 320 * 4 + i];
+      for (let j = 199; j >= 0; j--) {
+        for (let i = 0; i < 320 * 4; i++) {
+          pixelsGLInverted.data[k++] = pixelsGL[j * 320 * 4 + i];
         }
       }
 
-      // Hires
-      //
+      // Konwersja na Hires
+      // ------------------------------------------------------------------------------------------
+      if (changeBackColor) {
+        // do celów testowych
+        // Wypełniamy kanał ALFA
+        // ------------------------------------------------------------------------------------------
+        for (let j = 0; j < 200; j++) {
+          for (let i = 0; i < 320 * 4; i++) {
+            pixelsHires.data[j * 320 * 4 + i * 4 + 0] = backgroundColorRGBA[0];
+            pixelsHires.data[j * 320 * 4 + i * 4 + 1] = backgroundColorRGBA[1];
+            pixelsHires.data[j * 320 * 4 + i * 4 + 2] = backgroundColorRGBA[2];
+            pixelsHires.data[j * 320 * 4 + i * 4 + 3] = 0xff;
+            pixelsDiff.data[j * 320 * 4 + i * 4 + 0] = backgroundColorRGBA[0];
+            pixelsDiff.data[j * 320 * 4 + i * 4 + 1] = backgroundColorRGBA[1];
+            pixelsDiff.data[j * 320 * 4 + i * 4 + 2] = backgroundColorRGBA[2];
+            pixelsDiff.data[j * 320 * 4 + i * 4 + 3] = 0xff;
+          }
+        }
+
+        for (let by = 0; by < 200; by += 8) {
+          for (let bx = 0; bx < 320; bx += 8) {
+            var foundBackColor = false;
+            var newColor1 = backgroundColorRGBA[0];
+            var newColor2 = backgroundColorRGBA[0];
+
+            // Pierwsza pętla szuka kolorów dla Hires
+            //
+            for (let sy = 0; sy < 8; sy++) {
+              for (let sx = 0; sx < 8; sx++) {
+                // Odczyt pixela
+                //
+                let pixelColor =
+                  pixelsGLInverted.data[
+                    (by + sy) * 320 * 4 + bx * 8 * 4 + sx * 4
+                  ];
+
+                // Sprawdzamy czy background
+                // Jeżeli tak to zaznaczamy że znaleźliśmy
+                // Jeżeli nie to zapisujemy nowy kolor
+                if (pixelColor == backgroundColorRGBA[0]) {
+                  foundBackColor = true;
+                  // console.log("znalazłem tło");
+                } else if (pixelColor != newColor1) {
+                  newColor1 = pixelColor;
+                  // console.log("znalazłem color 1");
+                } else if (pixelColor != newColor2) {
+                  // console.log("znalazłem color 2");
+                  newColor2 = pixelColor;
+                }
+              }
+            }
+
+            // Druga pętla przepisuje pixele o znalezionych kolorach
+            //
+            for (let sy = 0; sy < 8; sy++) {
+              for (let sx = 0; sx < 8; sx++) {
+                for (let k = 0; k < 3; k++) {
+                  let pixelColor =
+                    pixelsGLInverted.data[
+                      (by + sy) * 320 * 4 + bx * 8 * 4 + sx * 4 + k
+                    ];
+
+                  if (!foundBackColor) {
+                    if (pixelColor == newColor1 || pixelColor == newColor2) {
+                      pixelsHires.data[
+                        (by + sy) * 320 * 4 + bx * 8 * 4 + sx * 4 + k
+                      ] = pixelColor;
+                    }
+                  } else {
+                    if (pixelColor == newColor1) {
+                      // console.log(
+                      //   "nowy punkt [ " +
+                      //     (by + sy) * 320 * 4 +
+                      //     bx * 8 * 4 +
+                      //     sx * 4 +
+                      //     k +
+                      //     " ] = " +
+                      //     pixelColor
+                      // );
+                      pixelsHires.data[
+                        (by + sy) * 320 * 4 + bx * 8 * 4 + sx * 4 + k
+                      ] = pixelColor;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        // console.log("pixelsHires:");
+        // for (let i = 0; i < 320 * 4; i++) {
+        //   console.log(pixelsHires[i]);
+        // }
+      }
+
+      // Pokazanie róznic
+      // ------------------------------------------------------------------------------------------
+      for (let j = 0; j < 200; j++) {
+        for (let i = 0; i < 320; i++) {
+          for (let k = 0; k < 3; k++) {
+            pixelsDiff.data[j * 320 * 4 + i * 4 + k] =
+              pixelsGLInverted.data[j * 320 * 4 + i * 4 + k] -
+              pixelsHires.data[j * 320 * 4 + i * 4 + k];
+          }
+        }
+      }
+
+      // test red dot
+      // pixelsHires.data[320*4*100+160*4+0] = 0xff
+      // pixelsHires.data[320*4*100+160*4+1] = 0
+      // pixelsHires.data[320*4*100+160*4+2] = 0
+      // pixelsHires.data[320*4*100+160*4+3] = 0xff
 
       // Zapis do output
+      // ------------------------------------------------------------------------------------------
       contextHires.putImageData(pixelsHires, 0, 0);
-      contextDiff.putImageData(pixelsHires, 0, 0);
+      contextDiff.putImageData(pixelsDiff, 0, 0);
 
       // Zmiana background color na podstawie kliknięcia myszką
+      // ------------------------------------------------------------------------------------------
       if (changeBackColor) {
         this.backgroundColorBack = this.colorString(
-          backgroundColor[0],
-          backgroundColor[1],
-          backgroundColor[2],
-          backgroundColor[3]
+          backgroundColorRGBA[0],
+          backgroundColorRGBA[1],
+          backgroundColorRGBA[2],
+          backgroundColorRGBA[3]
         );
         if (
-          (backgroundColor[0] + backgroundColor[0] + backgroundColor[0]) / 3 <
+          (backgroundColorRGBA[0] +
+            backgroundColorRGBA[0] +
+            backgroundColorRGBA[0]) /
+            3 <
           0x80
         ) {
           this.backgroundColorText = this.colorString(0xff, 0xff, 0xff, 0xff);
@@ -234,8 +381,15 @@ export default {
           this.backgroundColorText = this.colorString(0, 0, 0, 0xff);
         }
       }
+
+      if (changeBackColor) {
+        changeBackColor = false;
+      }
     }
   },
+  // ================================================================================================
+  // Funkcje VUE
+  // ================================================================================================
   mounted() {
     console.log("Mounted()");
     this.init();
