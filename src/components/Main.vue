@@ -51,10 +51,7 @@
       <v-switch v-model="switch_controls" label="Animate"></v-switch>
     </v-row>
     <v-row>
-      <v-chip
-        :text-color="backgroundColorText"
-        :color="backgroundColorBack"
-      >Background color [mouse click]</v-chip>
+      <v-chip :text-color="backgroundColorText" :color="backgroundColorBack">Background color</v-chip>
     </v-row>
   </v-container>
 </template>
@@ -68,13 +65,6 @@ import * as THREE from "three";
 var pixelsGL = new Uint8Array(320 * 200 * 4);
 var changeBackColor = false;
 var backgroundColorRGBA = [0, 0, 0, 1];
-
-// Przygotowanie buforów na pixele
-// ------------------------------------------------------------------------------------------
-// var pixelsHires = contextHires.getImageData(0, 0, 320, 200);
-var pixelsGLInverted = new ImageData(320, 200);
-var pixelsHires = new ImageData(320, 200);
-var pixelsDiff = new ImageData(320, 200);
 
 export default {
   name: "Main",
@@ -233,6 +223,13 @@ export default {
       var canvasDiff = document.getElementById("canvasDiff");
       var contextDiff = canvasDiff.getContext("2d");
 
+      // Przygotowanie buforów na pixele
+      // ------------------------------------------------------------------------------------------
+      // var pixelsHires = contextHires.getImageData(0, 0, 320, 200);
+      var pixelsGLInverted = new ImageData(320, 200);
+      var pixelsHires = new ImageData(320, 200);
+      var pixelsDiff = new ImageData(320, 200);
+
       // Obracamy do góry nogami (pixele GL liczone są w Y od dołu)
       // ------------------------------------------------------------------------------------------
       var k = 0;
@@ -244,104 +241,132 @@ export default {
 
       // Konwersja na Hires
       // ------------------------------------------------------------------------------------------
-      if (changeBackColor) {
+      // if (changeBackColor) {
+      // console.log("pixelsGLInverted:");
+      // console.log(pixelsGLInverted);
 
-        console.log("pixelsGLInverted:")
-        console.log(pixelsGLInverted)
-
-        // do celów testowych
-        // Wypełniamy kanał ALFA
-        // ------------------------------------------------------------------------------------------
-        for (let j = 0; j < 200; j++) {
-          for (let i = 0; i < 320 * 4; i++) {
-            pixelsHires.data[j * 320 * 4 + i * 4 + 0] = backgroundColorRGBA[0];
-            pixelsHires.data[j * 320 * 4 + i * 4 + 1] = backgroundColorRGBA[1];
-            pixelsHires.data[j * 320 * 4 + i * 4 + 2] = backgroundColorRGBA[2];
-            pixelsHires.data[j * 320 * 4 + i * 4 + 3] = 0xff;
-            pixelsDiff.data[j * 320 * 4 + i * 4 + 0] = backgroundColorRGBA[0];
-            pixelsDiff.data[j * 320 * 4 + i * 4 + 1] = backgroundColorRGBA[1];
-            pixelsDiff.data[j * 320 * 4 + i * 4 + 2] = backgroundColorRGBA[2];
-            pixelsDiff.data[j * 320 * 4 + i * 4 + 3] = 0xff;
-          }
+      // Czyścimy bufory
+      //
+      // ------------------------------------------------------------------------------------------
+      for (let j = 0; j < 200; j++) {
+        for (let i = 0; i < 320 * 4; i++) {
+          pixelsHires.data[j * 320 * 4 + i * 4 + 0] = 0;
+          pixelsHires.data[j * 320 * 4 + i * 4 + 1] = 0;
+          pixelsHires.data[j * 320 * 4 + i * 4 + 2] = 0;
+          pixelsHires.data[j * 320 * 4 + i * 4 + 3] = 0xff;
+          pixelsDiff.data[j * 320 * 4 + i * 4 + 0] = 0;
+          pixelsDiff.data[j * 320 * 4 + i * 4 + 1] = 0;
+          pixelsDiff.data[j * 320 * 4 + i * 4 + 2] = 0;
+          pixelsDiff.data[j * 320 * 4 + i * 4 + 3] = 0xff;
         }
+      }
 
-        // Szukamy obszarów 8x8
-        //
-        for (let by = 100; by < 108; by += 8) {
-          for (let bx = 320/4; bx < 320*3/4; bx += 8) {
-            var foundBackColor = false;
-            var newColor1 = backgroundColorRGBA[0];
-            var newColor2 = backgroundColorRGBA[0];
+      // Szukamy obszarów 8x8
+      //
+      for (let by = 0; by < 200; by += 8) {
+        for (let bx = 0; bx < 320; bx += 8) {
+          var foundBackColor = false;
+          var newColor1 = backgroundColorRGBA[0];
+          var newColor2 = backgroundColorRGBA[0];
 
-            // Pierwsza pętla szuka kolorów dla Hires
-            // Sprawdzamy tylko pierwszy bajt z RGBA
-            //
-            for (let sy = 0; sy < 8; sy++) {
-              for (let sx = 0; sx < 8; sx++) {
-                // Odczyt pixela
-                //
-                let pixelColor =
-                  pixelsGLInverted.data[
-                    (by + sy) * 320 * 4 + bx * 8 * 4 + sx * 4
-                  ];
+          // Pierwsza pętla szuka background kolor
+          // Porównujemy tylko pierwszy bajt z RGBA
+          //
+          for (let sy = 0; sy < 8; sy++) {
+            for (let sx = 0; sx < 8; sx++) {
+              // Odczyt pixela
+              //
+              let pixelColor =
+                pixelsGLInverted.data[(by + sy) * 320 * 4 + (bx + sx) * 4];
 
-                // Sprawdzamy czy background
-                // Jeżeli tak to zaznaczamy że znaleźliśmy
-                // Jeżeli nie to zapisujemy nowy kolor
-                if (pixelColor == backgroundColorRGBA[0]) {
-                  foundBackColor = true;
-                  // console.log("znalazłem tło");
-                } else if (pixelColor != newColor1) {
-                  newColor1 = pixelColor;
-                  // console.log("znalazłem color 1");
-                } else if (pixelColor != newColor2) {
-                  // console.log("znalazłem color 2");
+              // Sprawdzamy czy background
+              // Jeżeli tak to zaznaczamy że znaleźliśmy
+              //
+              if (pixelColor == backgroundColorRGBA[0]) {
+                foundBackColor = true;
+              }
+            }
+          }
+
+          // Druga pętla szuka kolorów dla Hires
+          // Porównujemy tylko pierwszy bajt z RGBA
+          //
+          for (let sy = 0; sy < 8; sy++) {
+            for (let sx = 0; sx < 8; sx++) {
+              // Odczyt pixela
+              //
+              let pixelColor =
+                pixelsGLInverted.data[(by + sy) * 320 * 4 + (bx + sx) * 4];
+
+              // Kolor 1
+              //
+              if (
+                newColor1 == backgroundColorRGBA[0] &&
+                pixelColor != newColor1 &&
+                pixelColor != backgroundColorRGBA[0]
+              ) {
+                newColor1 = pixelColor;
+              }
+
+              // Kolor 2
+              //
+              if (!foundBackColor) {
+                if (
+                  newColor2 == backgroundColorRGBA[0] &&
+                  pixelColor != newColor2 &&
+                  pixelColor != newColor1 &&
+                  pixelColor != backgroundColorRGBA[0]
+                ) {
                   newColor2 = pixelColor;
                 }
               }
             }
+          }
 
-            // Druga pętla przepisuje pixele o znalezionych kolorach
-            //
-            for (let sy = 0; sy < 8; sy++) {
-              for (let sx = 0; sx < 8; sx++) {
-                for (let k = 0; k < 3; k++) {
-                  let pixelColor =
-                    pixelsGLInverted.data[
-                      (by + sy) * 320 * 4 + bx * 8 * 4 + sx * 4 + k
-                    ];
+          // Trzecia pętla przepisuje pixele o znalezionych kolorach
+          //
+          for (let sy = 0; sy < 8; sy++) {
+            for (let sx = 0; sx < 8; sx++) {
+              let pixelColor =
+                pixelsGLInverted.data[(by + sy) * 320 * 4 + (bx + sx) * 4];
 
-                  if (!foundBackColor) {
-                    if (pixelColor == newColor1 || pixelColor == newColor2) {
-                      pixelsHires.data[
-                        (by + sy) * 320 * 4 + bx * 8 * 4 + sx * 4 + k
-                      ] = pixelColor;
-                    }
-                  } else {
-                    if (pixelColor == newColor1) {
-                      // console.log(
-                      //   "nowy punkt [ " +
-                      //     (by + sy) * 320 * 4 +
-                      //     bx * 8 * 4 +
-                      //     sx * 4 +
-                      //     k +
-                      //     " ] = " +
-                      //     pixelColor
-                      // );
-                      pixelsHires.data[
-                        (by + sy) * 320 * 4 + bx * 8 * 4 + sx * 4 + k
-                      ] = pixelColor;
-                    }
-                  }
+              // Gdy w kwadracie 8x8 znajduje się kolor tła to możemy uzyć tylko jednego koloru
+              //
+              if (!foundBackColor) {
+                if (pixelColor == newColor1 || pixelColor == newColor2) {
+                  pixelsHires.data[
+                    (by + sy) * 320 * 4 + (bx + sx) * 4
+                  ] = pixelColor;
+                }
+              } else {
+                if (pixelColor == newColor1) {
+                  pixelsHires.data[
+                    (by + sy) * 320 * 4 + (bx + sx) * 4
+                  ] = pixelColor;
                 }
               }
             }
           }
         }
-        // console.log("pixelsHires:");
-        // for (let i = 0; i < 320 * 4; i++) {
-        //   console.log(pixelsHires[i]);
-        // }
+      }
+      // console.log("pixelsHires:");
+      // for (let i = 0; i < 320 * 4; i++) {
+      //   console.log(pixelsHires[i]);
+      // }
+      // }
+
+      // Wypełniamy kanał ALFA
+      // przepisujemy bajt 0 na 1+2
+      // ------------------------------------------------------------------------------------------
+      for (let j = 0; j < 200; j++) {
+        for (let i = 0; i < 320 * 4; i++) {
+          pixelsHires.data[j * 320 * 4 + i * 4 + 1] =
+            pixelsHires.data[j * 320 * 4 + i * 4 + 0];
+          pixelsHires.data[j * 320 * 4 + i * 4 + 2] =
+            pixelsHires.data[j * 320 * 4 + i * 4 + 0];
+          pixelsHires.data[j * 320 * 4 + i * 4 + 3] = 0xff;
+          pixelsDiff.data[j * 320 * 4 + i * 4 + 3] = 0xff;
+        }
       }
 
       // Pokazanie róznic
