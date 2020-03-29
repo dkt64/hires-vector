@@ -182,7 +182,7 @@ export default {
       console.log(this.izo);
       this.scene.add(this.izo);
 
-      this.renderer = new THREE.WebGLRenderer({ antialias: true });
+      this.renderer = new THREE.WebGLRenderer({ antialias: false });
       this.renderer.setSize(canvasGL.clientWidth, canvasGL.clientHeight);
       this.renderer.setScissor(0, 0, 320, 200);
       this.renderer.setScissorTest(true);
@@ -245,6 +245,10 @@ export default {
       // Konwersja na Hires
       // ------------------------------------------------------------------------------------------
       if (changeBackColor) {
+
+        console.log("pixelsGLInverted:")
+        console.log(pixelsGLInverted)
+
         // do celów testowych
         // Wypełniamy kanał ALFA
         // ------------------------------------------------------------------------------------------
@@ -261,13 +265,16 @@ export default {
           }
         }
 
-        for (let by = 0; by < 200; by += 8) {
-          for (let bx = 0; bx < 320; bx += 8) {
+        // Szukamy obszarów 8x8
+        //
+        for (let by = 100; by < 108; by += 8) {
+          for (let bx = 320/4; bx < 320*3/4; bx += 8) {
             var foundBackColor = false;
             var newColor1 = backgroundColorRGBA[0];
             var newColor2 = backgroundColorRGBA[0];
 
             // Pierwsza pętla szuka kolorów dla Hires
+            // Sprawdzamy tylko pierwszy bajt z RGBA
             //
             for (let sy = 0; sy < 8; sy++) {
               for (let sx = 0; sx < 8; sx++) {
