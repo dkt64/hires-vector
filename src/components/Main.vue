@@ -10,8 +10,8 @@
         <canvas id="canvasHires" width="320" height="200"></canvas>
       </v-card>
       <v-card tile outlined class="mx-auto pa-2">
-        <v-toolbar color="indigo" class="headline" dark>Diff</v-toolbar>
-        <canvas id="canvasDiff" width="320" height="200"></canvas>
+        <v-toolbar color="indigo" class="headline" dark>Sprites</v-toolbar>
+        <canvas id="canvasSprites" width="320" height="200"></canvas>
       </v-card>
     </v-row>
     <v-divider class="mt-5"></v-divider>
@@ -142,7 +142,7 @@ export default {
     init: function() {
       var canvasGL = document.getElementById("canvasGL");
       this.camera = new THREE.PerspectiveCamera(
-        60,
+        45,
         canvasGL.clientWidth / canvasGL.clientHeight,
         0.1,
         1000
@@ -155,7 +155,7 @@ export default {
       // light.position.set(0, 0, 1000);
       this.scene.add(light);
 
-      var izoGeo = new THREE.IcosahedronGeometry(60);
+      var izoGeo = new THREE.IcosahedronGeometry(70);
       var izoMat = new THREE.MeshPhongMaterial({
         color: 0xffffff,
         vertexColors: THREE.FaceColors
@@ -220,15 +220,15 @@ export default {
       var canvasHires = document.getElementById("canvasHires");
       var contextHires = canvasHires.getContext("2d");
 
-      var canvasDiff = document.getElementById("canvasDiff");
-      var contextDiff = canvasDiff.getContext("2d");
+      var canvasSprites = document.getElementById("canvasSprites");
+      var contextSprites = canvasSprites.getContext("2d");
 
       // Przygotowanie buforów na pixele
       // ------------------------------------------------------------------------------------------
       // var pixelsHires = contextHires.getImageData(0, 0, 320, 200);
       var pixelsGLInverted = new ImageData(320, 200);
       var pixelsHires = new ImageData(320, 200);
-      var pixelsDiff = new ImageData(320, 200);
+      var pixelsSprites = new ImageData(320, 200);
 
       // Obracamy do góry nogami (pixele GL liczone są w Y od dołu)
       // ------------------------------------------------------------------------------------------
@@ -254,10 +254,10 @@ export default {
           pixelsHires.data[j * 320 * 4 + i * 4 + 1] = 0;
           pixelsHires.data[j * 320 * 4 + i * 4 + 2] = 0;
           pixelsHires.data[j * 320 * 4 + i * 4 + 3] = 0xff;
-          pixelsDiff.data[j * 320 * 4 + i * 4 + 0] = 0;
-          pixelsDiff.data[j * 320 * 4 + i * 4 + 1] = 0;
-          pixelsDiff.data[j * 320 * 4 + i * 4 + 2] = 0;
-          pixelsDiff.data[j * 320 * 4 + i * 4 + 3] = 0xff;
+          pixelsSprites.data[j * 320 * 4 + i * 4 + 0] = 0;
+          pixelsSprites.data[j * 320 * 4 + i * 4 + 1] = 0;
+          pixelsSprites.data[j * 320 * 4 + i * 4 + 2] = 0;
+          pixelsSprites.data[j * 320 * 4 + i * 4 + 3] = 0xff;
         }
       }
 
@@ -365,7 +365,7 @@ export default {
           pixelsHires.data[j * 320 * 4 + i * 4 + 2] =
             pixelsHires.data[j * 320 * 4 + i * 4 + 0];
           pixelsHires.data[j * 320 * 4 + i * 4 + 3] = 0xff;
-          pixelsDiff.data[j * 320 * 4 + i * 4 + 3] = 0xff;
+          pixelsSprites.data[j * 320 * 4 + i * 4 + 3] = 0xff;
         }
       }
 
@@ -374,7 +374,7 @@ export default {
       for (let j = 0; j < 200; j++) {
         for (let i = 0; i < 320; i++) {
           for (let k = 0; k < 3; k++) {
-            pixelsDiff.data[j * 320 * 4 + i * 4 + k] =
+            pixelsSprites.data[j * 320 * 4 + i * 4 + k] =
               pixelsGLInverted.data[j * 320 * 4 + i * 4 + k] -
               pixelsHires.data[j * 320 * 4 + i * 4 + k];
           }
@@ -390,7 +390,7 @@ export default {
       // Zapis do output
       // ------------------------------------------------------------------------------------------
       contextHires.putImageData(pixelsHires, 0, 0);
-      contextDiff.putImageData(pixelsDiff, 0, 0);
+      contextSprites.putImageData(pixelsSprites, 0, 0);
 
       // Zmiana background color na podstawie kliknięcia myszką
       // ------------------------------------------------------------------------------------------
