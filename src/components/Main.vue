@@ -59,27 +59,26 @@
       :color="backgroundColorBack"
       >Background color (click on image)</v-chip
     >
-    <v-slider
+    <!-- <v-slider
       style="width:500px"
       :thumb-size="24"
       thumb-label="always"
-      v-model="slider_sprites_nr"
+      v-model="max_sprites"
       step="1"
       min="1"
       max="8"
       label="Maximum sprites nr"
     >
-      <template v-slot:append>
-        <v-text-field
-          v-model="slider_sprites_nr"
-          class="mt-0 pt-0"
-          hide-details
-          single-line
-          type="number"
-          style="width: 60px"
-        ></v-text-field>
-      </template>
-    </v-slider>
+      <template v-slot:append> -->
+    <v-text-field
+      v-model="max_sprites"
+      class="mt-0 pt-0"
+      type="number"
+      style="width: 120px"
+      label="Max nr of sprites"
+    ></v-text-field>
+    <!-- </template>
+    </v-slider> -->
     <v-switch class="mr-4" v-model="switch_controls" label="Animate"></v-switch>
     <v-switch class="mr-4" v-model="rysuj_siatke" label="Show grid"></v-switch>
     <v-text-field
@@ -89,10 +88,16 @@
       :value="colors_all"
     ></v-text-field>
     <v-text-field
+      label="Visible colors for hires bitmap"
+      outlined
+      readonly
+      :value="colors_bmp"
+    ></v-text-field>
+    <v-text-field
       label="Visible colors for sprites"
       outlined
       readonly
-      :value="colors_sprites"
+      :value="colors_spr"
     ></v-text-field>
   </v-container>
 </template>
@@ -121,11 +126,12 @@ export default {
     izoMat: null,
     izo: null,
     colors_all: [],
-    colors_sprites: [],
+    colors_bmp: [],
+    colors_spr: [],
     slider_x: 0,
     slider_y: 0,
     slider_z: 0,
-    slider_sprites_nr: 0,
+    max_sprites: 7,
     switch_controls: false,
     backgroundColorBack: "#000000ff",
     backgroundColorText: "#ffffffff",
@@ -480,26 +486,47 @@ export default {
 
       // Kolory
       // ------------------------------------------------------------------------------------------
-      // var colors_sprites = new Uint8Array();
-      var colors_sprites = []
+      var found = false;
+
+      var colors_spr = [];
       for (let j = 0; j < 200; j++) {
         for (let i = 0; i < 320; i++) {
           for (let k = 0; k < this.colors_all.length; k++) {
             if (this.colors_all[k] == pixelsSprites.data[j * 320 * 4 + i * 4]) {
-              var found = false;
-              for (let l = 0; l < colors_sprites.length; l++) {
-                if (colors_sprites[l] == this.colors_all[k]) {
+              found = false;
+              for (let l = 0; l < colors_spr.length; l++) {
+                if (colors_spr[l] == this.colors_all[k]) {
                   found = true;
                 }
               }
               if (!found) {
-                colors_sprites.push(this.colors_all[k]);
+                colors_spr.push(this.colors_all[k]);
               }
             }
           }
         }
       }
-      this.colors_sprites = colors_sprites;
+      this.colors_spr = colors_spr;
+
+      var colors_bmp = [];
+      for (let j = 0; j < 200; j++) {
+        for (let i = 0; i < 320; i++) {
+          for (let k = 0; k < this.colors_all.length; k++) {
+            if (this.colors_all[k] == pixelsHires.data[j * 320 * 4 + i * 4]) {
+              found = false;
+              for (let l = 0; l < colors_bmp.length; l++) {
+                if (colors_bmp[l] == this.colors_all[k]) {
+                  found = true;
+                }
+              }
+              if (!found) {
+                colors_bmp.push(this.colors_all[k]);
+              }
+            }
+          }
+        }
+      }
+      this.colors_bmp = colors_bmp;
 
       // Zapis do output
       // ------------------------------------------------------------------------------------------
