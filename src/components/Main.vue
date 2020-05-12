@@ -3,7 +3,11 @@
     <v-row class="d-flex justify-space-around">
       <v-card tile outlined class="mx-auto pa-2">
         <v-toolbar color="indigo" class="headline" dark>Three.js</v-toolbar>
-        <div v-on:click="clickOnGL" id="canvasGL" style="width: 320px; height: 200px"></div>
+        <div
+          v-on:click="clickOnGL"
+          id="canvasGL"
+          style="width: 320px; height: 200px"
+        ></div>
       </v-card>
       <v-card tile outlined class="mx-auto pa-2">
         <v-toolbar color="indigo" class="headline" dark>Hires</v-toolbar>
@@ -48,10 +52,13 @@
       ></v-slider>
     </v-row>
     <v-row class="d-flex justify-start">
-      <v-switch v-model="switch_controls" label="Animate"></v-switch>
+      <v-switch class="mr-4" v-model="switch_controls" label="Animate"></v-switch>
+      <v-switch class="mr-4" v-model="rysuj_siatke" label="Siatka"></v-switch>
     </v-row>
     <v-row>
-      <v-chip :text-color="backgroundColorText" :color="backgroundColorBack">Background color</v-chip>
+      <v-chip :text-color="backgroundColorText" :color="backgroundColorBack"
+        >Background color</v-chip
+      >
     </v-row>
   </v-container>
 </template>
@@ -82,7 +89,8 @@ export default {
     slider_z: 0,
     switch_controls: false,
     backgroundColorBack: "#000000ff",
-    backgroundColorText: "#ffffffff"
+    backgroundColorText: "#ffffffff",
+    rysuj_siatke: false
   }),
 
   // ================================================================================================
@@ -158,7 +166,7 @@ export default {
       var izoGeo = new THREE.IcosahedronGeometry(70);
       var izoMat = new THREE.MeshPhongMaterial({
         color: 0xffffff,
-        vertexColors: THREE.FaceColors
+        vertexColors: THREE.FaceColors,
       });
       for (let i = 0; i < izoGeo.faces.length; i++) {
         //izoGeo.faces[i].color.setHex((c64colors[i & 0x0f] * (i + 1)) & 0xffff00 + i);
@@ -249,7 +257,7 @@ export default {
       //
       // ------------------------------------------------------------------------------------------
       for (let j = 0; j < 200; j++) {
-        for (let i = 0; i < 320 * 4; i++) {
+        for (let i = 0; i < 320; i++) {
           pixelsHires.data[j * 320 * 4 + i * 4 + 0] = 0;
           pixelsHires.data[j * 320 * 4 + i * 4 + 1] = 0;
           pixelsHires.data[j * 320 * 4 + i * 4 + 2] = 0;
@@ -359,7 +367,7 @@ export default {
       // przepisujemy bajt 0 na 1+2
       // ------------------------------------------------------------------------------------------
       for (let j = 0; j < 200; j++) {
-        for (let i = 0; i < 320 * 4; i++) {
+        for (let i = 0; i < 320; i++) {
           pixelsHires.data[j * 320 * 4 + i * 4 + 1] =
             pixelsHires.data[j * 320 * 4 + i * 4 + 0];
           pixelsHires.data[j * 320 * 4 + i * 4 + 2] =
@@ -387,6 +395,39 @@ export default {
       // pixelsHires.data[320*4*100+160*4+2] = 0
       // pixelsHires.data[320*4*100+160*4+3] = 0xff
 
+      // Rysujemy linie kropkowane
+      // pionowe
+      // ------------------------------------------------------------------------------------------
+      if (this.rysuj_siatke) {
+        for (let dy = 0; dy < 200; dy += 2) {
+          for (let dx = 0; dx < 320; dx += 8) {
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+          }
+        }
+
+        // Rysujemy linie kropkowane
+        // poziome
+        // ------------------------------------------------------------------------------------------
+        for (let dy = 0; dy < 200; dy += 8) {
+          for (let dx = 0; dx < 320; dx += 2) {
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+          }
+        }
+      }
       // Zapis do output
       // ------------------------------------------------------------------------------------------
       contextHires.putImageData(pixelsHires, 0, 0);
@@ -417,7 +458,7 @@ export default {
       if (changeBackColor) {
         changeBackColor = false;
       }
-    }
+    },
   },
   // ================================================================================================
   // Funkcje VUE
@@ -426,6 +467,6 @@ export default {
     console.log("Mounted()");
     this.init();
     this.animate();
-  }
+  },
 };
 </script>
