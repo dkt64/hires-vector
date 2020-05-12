@@ -51,15 +51,49 @@
         label="Angle Z"
       ></v-slider>
     </v-row>
-    <v-row class="d-flex justify-start">
-      <v-switch class="mr-4" v-model="switch_controls" label="Animate"></v-switch>
-      <v-switch class="mr-4" v-model="rysuj_siatke" label="Siatka"></v-switch>
-    </v-row>
-    <v-row>
-      <v-chip :text-color="backgroundColorText" :color="backgroundColorBack"
-        >Background color</v-chip
-      >
-    </v-row>
+    <v-divider class="mt-2 mb-4"></v-divider>
+    <v-row class="ml-1 mb-4">Settings:</v-row>
+    <v-chip
+      class="mb-9"
+      :text-color="backgroundColorText"
+      :color="backgroundColorBack"
+      >Background color (click on image)</v-chip
+    >
+    <v-slider
+      style="width:500px"
+      :thumb-size="24"
+      thumb-label="always"
+      v-model="slider_sprites_nr"
+      step="1"
+      min="1"
+      max="8"
+      label="Maximum sprites nr"
+    >
+      <template v-slot:append>
+        <v-text-field
+          v-model="slider_sprites_nr"
+          class="mt-0 pt-0"
+          hide-details
+          single-line
+          type="number"
+          style="width: 60px"
+        ></v-text-field>
+      </template>
+    </v-slider>
+    <v-switch class="mr-4" v-model="switch_controls" label="Animate"></v-switch>
+    <v-switch class="mr-4" v-model="rysuj_siatke" label="Show grid"></v-switch>
+    <v-text-field
+      label="All colors"
+      outlined
+      readonly
+      :value="colors_all"
+    ></v-text-field>
+    <v-text-field
+      label="Visible colors for sprites"
+      outlined
+      readonly
+      :value="colors_sprites"
+    ></v-text-field>
   </v-container>
 </template>
 
@@ -83,14 +117,19 @@ export default {
     renderer: null,
     scene: null,
     camera: null,
+    izoGeo: null,
+    izoMat: null,
     izo: null,
+    colors_all: [],
+    colors_sprites: [],
     slider_x: 0,
     slider_y: 0,
     slider_z: 0,
+    slider_sprites_nr: 0,
     switch_controls: false,
     backgroundColorBack: "#000000ff",
     backgroundColorText: "#ffffffff",
-    rysuj_siatke: false
+    rysuj_siatke: false,
   }),
 
   // ================================================================================================
@@ -163,18 +202,28 @@ export default {
       // light.position.set(0, 0, 1000);
       this.scene.add(light);
 
-      var izoGeo = new THREE.IcosahedronGeometry(70);
-      var izoMat = new THREE.MeshPhongMaterial({
+      this.izoGeo = new THREE.IcosahedronGeometry(70);
+      this.izoMat = new THREE.MeshPhongMaterial({
         color: 0xffffff,
         vertexColors: THREE.FaceColors,
       });
-      for (let i = 0; i < izoGeo.faces.length; i++) {
+
+      for (let i = 0; i < this.izoGeo.faces.length; i++) {
         //izoGeo.faces[i].color.setHex((c64colors[i & 0x0f] * (i + 1)) & 0xffff00 + i);
-        izoGeo.faces[i].color.setHex(
+        this.izoGeo.faces[i].color.setHex(
           0x202020 + (i * 8 + 1) + (i * 8 + 1) * 256 + (i * 8 + 1) * 256 * 256
         );
       }
-      this.izo = new THREE.Mesh(izoGeo, izoMat);
+
+      var colors_all = new Uint8Array(this.izoGeo.faces.length);
+      for (let i = 0; i < this.izoGeo.faces.length; i++) {
+        colors_all[i] = this.izoGeo.faces[i].color.getHex();
+      }
+      this.colors_all = colors_all;
+      console.log("Colors:");
+      console.log(this.colors);
+
+      this.izo = new THREE.Mesh(this.izoGeo, this.izoMat);
       this.izo.name = "izo";
       console.log(this.izo.name);
       console.log(this.izo);
@@ -428,6 +477,30 @@ export default {
           }
         }
       }
+
+      // Kolory
+      // ------------------------------------------------------------------------------------------
+      // var colors_sprites = new Uint8Array();
+      var colors_sprites = []
+      for (let j = 0; j < 200; j++) {
+        for (let i = 0; i < 320; i++) {
+          for (let k = 0; k < this.colors_all.length; k++) {
+            if (this.colors_all[k] == pixelsSprites.data[j * 320 * 4 + i * 4]) {
+              var found = false;
+              for (let l = 0; l < colors_sprites.length; l++) {
+                if (colors_sprites[l] == this.colors_all[k]) {
+                  found = true;
+                }
+              }
+              if (!found) {
+                colors_sprites.push(this.colors_all[k]);
+              }
+            }
+          }
+        }
+      }
+      this.colors_sprites = colors_sprites;
+
       // Zapis do output
       // ------------------------------------------------------------------------------------------
       contextHires.putImageData(pixelsHires, 0, 0);
