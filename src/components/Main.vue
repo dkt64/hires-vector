@@ -99,6 +99,12 @@
       readonly
       :value="colors_spr"
     ></v-text-field>
+    <v-text-field
+      label="Sprite rectangles"
+      outlined
+      :value="rects_spr"
+    ></v-text-field>
+    <v-btn @click="clickOnCalculate">Calculate...</v-btn>
   </v-container>
 </template>
 
@@ -125,9 +131,12 @@ export default {
     izoGeo: null,
     izoMat: null,
     izo: null,
+    pixelsHires: null,
+    pixelsSprites: null,
     colors_all: [],
     colors_bmp: [],
     colors_spr: [],
+    rects_spr: "",
     slider_x: 0,
     slider_y: 0,
     slider_z: 0,
@@ -155,7 +164,223 @@ export default {
         ")"
       );
     },
+    // --------------------------------------------------------------------------------------------
+    // Grid - rysowanie siatki
+    // --------------------------------------------------------------------------------------------
+    Grid: function(pixelsHires, pixelsSprites) {
+      // Rysujemy linie kropkowane
+      // pionowe
+      // ------------------------------------------------------------------------------------------
+      if (this.rysuj_siatke) {
+        for (let dy = 0; dy < 200; dy += 2) {
+          for (let dx = 0; dx < 320; dx += 8) {
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+          }
+        }
 
+        // Rysujemy linie kropkowane
+        // poziome
+        // ------------------------------------------------------------------------------------------
+        for (let dy = 0; dy < 200; dy += 8) {
+          for (let dx = 0; dx < 320; dx += 2) {
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            pixelsHires.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+          }
+        }
+      }
+    },
+    fillImageData: function(image, r, g, b, a) {
+      for (let j = 0; j < 200; j++) {
+        for (let i = 0; i < 320; i++) {
+          image.data[j * 320 * 4 + i * 4 + 0] = r;
+          image.data[j * 320 * 4 + i * 4 + 1] = g;
+          image.data[j * 320 * 4 + i * 4 + 2] = b;
+          image.data[j * 320 * 4 + i * 4 + 3] = a;
+        }
+      }
+    },
+    // --------------------------------------------------------------------------------------------
+    // countColors - liczenie kolorów
+    // --------------------------------------------------------------------------------------------
+    countColors: function(pixelsHires, pixelsSprites) {
+      var found = false;
+
+      var colors_spr = [];
+      for (let j = 0; j < 200; j++) {
+        for (let i = 0; i < 320; i++) {
+          for (let k = 0; k < this.colors_all.length; k++) {
+            if (this.colors_all[k] == pixelsSprites.data[j * 320 * 4 + i * 4]) {
+              found = false;
+              for (let l = 0; l < colors_spr.length; l++) {
+                if (colors_spr[l] == this.colors_all[k]) {
+                  found = true;
+                }
+              }
+              if (!found) {
+                colors_spr.push(this.colors_all[k]);
+              }
+            }
+          }
+        }
+      }
+      this.colors_spr = colors_spr;
+
+      var colors_bmp = [];
+      for (let j = 0; j < 200; j++) {
+        for (let i = 0; i < 320; i++) {
+          for (let k = 0; k < this.colors_all.length; k++) {
+            if (this.colors_all[k] == pixelsHires.data[j * 320 * 4 + i * 4]) {
+              found = false;
+              for (let l = 0; l < colors_bmp.length; l++) {
+                if (colors_bmp[l] == this.colors_all[k]) {
+                  found = true;
+                }
+              }
+              if (!found) {
+                colors_bmp.push(this.colors_all[k]);
+              }
+            }
+          }
+        }
+      }
+      this.colors_bmp = colors_bmp;
+    },
+    // --------------------------------------------------------------------------------------------
+    // Sprites - wygenerowanie sprajtów
+    // --------------------------------------------------------------------------------------------
+    drawRect: function(image, x0, y0, x1, y1) {
+      // Pozioma górna
+      var dy = y0;
+      for (let dx = x0; dx < x1; dx += 1) {
+        // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+        // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+        image.data[dy * 320 * 4 + dx * 4 + 2] = 0xff;
+        image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+      }
+      // Pozioma dolna
+      dy = y1;
+      for (let dx = x0; dx < x1; dx += 1) {
+        // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+        // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+        image.data[dy * 320 * 4 + dx * 4 + 2] = 0xff;
+        image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+      }
+    },
+    // --------------------------------------------------------------------------------------------
+    // Sprites - wygenerowanie sprajtów
+    // --------------------------------------------------------------------------------------------
+    Sprites: function(pixelsSprites) {
+      var rects_spr = [];
+
+      // Pętla z kolorami
+      for (let k = 0; k < this.colors_spr.length; k++) {
+        // Selekcja plane'a
+        var plane = new ImageData(320, 200);
+        this.fillImageData(plane, 0, 0, 0, 0xff);
+        for (let j = 0; j < 200; j++) {
+          for (let i = 0; i < 320; i++) {
+            if (this.colors_spr[k] == pixelsSprites.data[j * 320 * 4 + i * 4]) {
+              plane.data[j * 320 * 4 + i * 4] =
+                pixelsSprites.data[j * 320 * 4 + i * 4];
+              // console.log("found " + k);
+            }
+          }
+        }
+        // Szukamy x0,y0,x1,y1 (x_min, x_max, y_min, y_max)
+        var x0 = 0;
+        var y0 = 0;
+        var x1 = 319;
+        var y1 = 199;
+
+        // y0
+        for (let j = 0; j < 200; j++) {
+          for (let i = 0; i < 320; i++) {
+            if (plane.data[j * 320 * 4 + i * 4] != 0) {
+              y0 = j;
+              j = 200;
+              break;
+            }
+          }
+        }
+        // y1
+        for (let j = 199; j >= 0; j--) {
+          for (let i = 0; i < 320; i++) {
+            if (plane.data[j * 320 * 4 + i * 4] != 0) {
+              y1 = j;
+              j = -1;
+              break;
+            }
+          }
+        }
+        // x0
+        for (let i = 0; i < 320; i++) {
+          for (let j = 0; j < 200; j++) {
+            if (plane.data[j * 320 * 4 + i * 4] != 0) {
+              x0 = i;
+              i = 320;
+              break;
+            }
+          }
+        }
+        // x1
+        for (let i = 319; i >= 0; i--) {
+          for (let j = 0; j < 200; j++) {
+            if (plane.data[j * 320 * 4 + i * 4] != 0) {
+              x1 = i;
+              i = -1;
+              break;
+            }
+          }
+        }
+
+        // Dodajemy nowy rect
+        var newRect = {
+          i: k,
+          x0: x0,
+          x1: x1,
+          y0: y0,
+          y1: y1,
+        };
+
+        rects_spr.push(newRect);
+        // console.log(newRect)
+
+        //
+        // Rysowanie prostokąta
+        //
+        this.drawRect(pixelsSprites, x0, y0, x1, y1);
+      }
+
+      this.rects_spr = "";
+      for (let i = 0; i < rects_spr.length; i++) {
+        this.rects_spr += rects_spr[i].i + ": ";
+        this.rects_spr += "x0=" + rects_spr[i].x0;
+        this.rects_spr += " x1=" + rects_spr[i].x1;
+        this.rects_spr += " y0=" + rects_spr[i].y0;
+        this.rects_spr += " y1=" + rects_spr[i].y1;
+        this.rects_spr += "    ";
+      }
+    },
+    // --------------------------------------------------------------------------------------------
+    // clickOnCalculate - kliknięcie na context GL
+    // --------------------------------------------------------------------------------------------
+    clickOnCalculate: function() {
+      this.countColors(this.pixelsHires, this.pixelsSprites);
+      this.Sprites(this.pixelsSprites);
+    },
     // --------------------------------------------------------------------------------------------
     // clickOnGL - kliknięcie na context GL
     // --------------------------------------------------------------------------------------------
@@ -214,10 +439,11 @@ export default {
         vertexColors: THREE.FaceColors,
       });
 
+      var colorStep = 200 / this.izoGeo.faces.length;
       for (let i = 0; i < this.izoGeo.faces.length; i++) {
         //izoGeo.faces[i].color.setHex((c64colors[i & 0x0f] * (i + 1)) & 0xffff00 + i);
         this.izoGeo.faces[i].color.setHex(
-          0x202020 + (i * 8 + 1) + (i * 8 + 1) * 256 + (i * 8 + 1) * 256 * 256
+          0x202020 + i * (colorStep + colorStep * 256 + colorStep * 256 * 256)
         );
       }
 
@@ -311,18 +537,8 @@ export default {
       // Czyścimy bufory
       //
       // ------------------------------------------------------------------------------------------
-      for (let j = 0; j < 200; j++) {
-        for (let i = 0; i < 320; i++) {
-          pixelsHires.data[j * 320 * 4 + i * 4 + 0] = 0;
-          pixelsHires.data[j * 320 * 4 + i * 4 + 1] = 0;
-          pixelsHires.data[j * 320 * 4 + i * 4 + 2] = 0;
-          pixelsHires.data[j * 320 * 4 + i * 4 + 3] = 0xff;
-          pixelsSprites.data[j * 320 * 4 + i * 4 + 0] = 0;
-          pixelsSprites.data[j * 320 * 4 + i * 4 + 1] = 0;
-          pixelsSprites.data[j * 320 * 4 + i * 4 + 2] = 0;
-          pixelsSprites.data[j * 320 * 4 + i * 4 + 3] = 0xff;
-        }
-      }
+      this.fillImageData(pixelsHires, 0, 0, 0, 0xff);
+      this.fillImageData(pixelsSprites, 0, 0, 0, 0xff);
 
       // Szukamy obszarów 8x8
       //
@@ -450,88 +666,24 @@ export default {
       // pixelsHires.data[320*4*100+160*4+2] = 0
       // pixelsHires.data[320*4*100+160*4+3] = 0xff
 
-      // Rysujemy linie kropkowane
-      // pionowe
+      // Malowanie siatki na obrazie
       // ------------------------------------------------------------------------------------------
-      if (this.rysuj_siatke) {
-        for (let dy = 0; dy < 200; dy += 2) {
-          for (let dx = 0; dx < 320; dx += 8) {
-            pixelsHires.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-            pixelsHires.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-            pixelsHires.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
-            pixelsHires.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
-            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
-            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
-          }
-        }
+      this.Grid(pixelsHires, pixelsSprites);
 
-        // Rysujemy linie kropkowane
-        // poziome
-        // ------------------------------------------------------------------------------------------
-        for (let dy = 0; dy < 200; dy += 8) {
-          for (let dx = 0; dx < 320; dx += 2) {
-            pixelsHires.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-            pixelsHires.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-            pixelsHires.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
-            pixelsHires.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
-            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
-            pixelsSprites.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
-          }
-        }
-      }
-
-      // Kolory
+      // Liczenie kolorów
       // ------------------------------------------------------------------------------------------
-      var found = false;
+      // this.countColors(pixelsHires, pixelsSprites);
 
-      var colors_spr = [];
-      for (let j = 0; j < 200; j++) {
-        for (let i = 0; i < 320; i++) {
-          for (let k = 0; k < this.colors_all.length; k++) {
-            if (this.colors_all[k] == pixelsSprites.data[j * 320 * 4 + i * 4]) {
-              found = false;
-              for (let l = 0; l < colors_spr.length; l++) {
-                if (colors_spr[l] == this.colors_all[k]) {
-                  found = true;
-                }
-              }
-              if (!found) {
-                colors_spr.push(this.colors_all[k]);
-              }
-            }
-          }
-        }
-      }
-      this.colors_spr = colors_spr;
-
-      var colors_bmp = [];
-      for (let j = 0; j < 200; j++) {
-        for (let i = 0; i < 320; i++) {
-          for (let k = 0; k < this.colors_all.length; k++) {
-            if (this.colors_all[k] == pixelsHires.data[j * 320 * 4 + i * 4]) {
-              found = false;
-              for (let l = 0; l < colors_bmp.length; l++) {
-                if (colors_bmp[l] == this.colors_all[k]) {
-                  found = true;
-                }
-              }
-              if (!found) {
-                colors_bmp.push(this.colors_all[k]);
-              }
-            }
-          }
-        }
-      }
-      this.colors_bmp = colors_bmp;
+      // Analiza obrazu - Sprites
+      // ------------------------------------------------------------------------------------------
+      // this.Sprites(pixelsSprites);
 
       // Zapis do output
       // ------------------------------------------------------------------------------------------
       contextHires.putImageData(pixelsHires, 0, 0);
       contextSprites.putImageData(pixelsSprites, 0, 0);
+      this.pixelsHires = pixelsHires;
+      this.pixelsSprites = pixelsSprites;
 
       // Zmiana background color na podstawie kliknięcia myszką
       // ------------------------------------------------------------------------------------------
