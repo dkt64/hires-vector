@@ -92,13 +92,11 @@
     <v-text-field
       label="All colors"
       outlined
-      readonly
       :value="colors_all"
     ></v-text-field>
     <v-text-field
       label="Visible colors for hires bitmap"
       outlined
-      readonly
       :value="colors_bmp"
     ></v-text-field>
     <v-text-field
@@ -272,48 +270,58 @@ export default {
     // --------------------------------------------------------------------------------------------
     drawSprites: function(image) {
       if (this.rects_spr != null) {
-        var k = this.rect_selection
-        if (this.rects_spr[k] != null) {
-        // for (let k = 0; k < this.rects_spr.length; k++) {
-          var x0 = this.rects_spr[k].x0;
-          var y0 = this.rects_spr[k].y0;
-          var x1 = this.rects_spr[k].x1;
-          var y1 = this.rects_spr[k].y1;
+        var k1 = this.rect_selection;
+        var k2;
 
-          // Pozioma górna
-          var dy = y0;
-          for (let dx = x0; dx <= x1; dx += 2) {
-            // image.data[dy * 320 * 4 + dx * 4 + 0] = k * 0x10;
-            // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-            image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
-            // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
-          }
+        if (k1 >= 0 && k1 < this.rects_spr.length) {
+          k2 = k1;
+        } else {
+          k1 = 0;
+          k2 = this.rects_spr.length - 1;
+        }
 
-          // Pozioma dolna
-          dy = y1;
-          for (let dx = x0; dx <= x1; dx += 2) {
-            // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-            // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-            image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
-            // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
-          }
+        if (this.rects_spr[k1] != null && this.rects_spr[k2] != null) {
+          for (let k = k1; k <= k2; k++) {
+            var x0 = this.rects_spr[k].x0;
+            var y0 = this.rects_spr[k].y0;
+            var x1 = this.rects_spr[k].x1;
+            var y1 = this.rects_spr[k].y1;
 
-          // Pionowa lewa
-          var dx = x0;
-          for (let dy = y0; dy <= y1; dy += 2) {
-            // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-            // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-            image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
-            // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
-          }
+            // Pozioma górna
+            var dy = y0;
+            for (let dx = x0; dx <= x1; dx += 2) {
+              // image.data[dy * 320 * 4 + dx * 4 + 0] = k * 0x10;
+              // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+              image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+              // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            }
 
-          // Pionowa prawa
-          dx = x1;
-          for (let dy = y0; dy <= y1; dy += 2) {
-            // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-            // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-            image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
-            // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            // Pozioma dolna
+            dy = y1;
+            for (let dx = x0; dx <= x1; dx += 2) {
+              // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+              // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+              image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+              // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            }
+
+            // Pionowa lewa
+            var dx = x0;
+            for (let dy = y0; dy <= y1; dy += 2) {
+              // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+              // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+              image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+              // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            }
+
+            // Pionowa prawa
+            dx = x1;
+            for (let dy = y0; dy <= y1; dy += 2) {
+              // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+              // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+              image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+              // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+            }
           }
         }
       }
@@ -402,14 +410,16 @@ export default {
       console.log(this.rects_spr);
 
       // Wygenerowanie opisu
+      var rects_spr_txt = "";
       for (let i = 0; i < rects_spr.length; i++) {
-        this.rects_spr_txt += rects_spr[i].i + ": ";
-        this.rects_spr_txt += "x0=" + rects_spr[i].x0;
-        this.rects_spr_txt += " x1=" + rects_spr[i].x1;
-        this.rects_spr_txt += " y0=" + rects_spr[i].y0;
-        this.rects_spr_txt += " y1=" + rects_spr[i].y1;
-        this.rects_spr_txt += "    ";
+        rects_spr_txt += rects_spr[i].i + ": ";
+        rects_spr_txt += "x0=" + rects_spr[i].x0;
+        rects_spr_txt += " x1=" + rects_spr[i].x1;
+        rects_spr_txt += " y0=" + rects_spr[i].y0;
+        rects_spr_txt += " y1=" + rects_spr[i].y1;
+        rects_spr_txt += "    ";
       }
+      this.rects_spr_txt = rects_spr_txt;
     },
     // --------------------------------------------------------------------------------------------
     // clickOnCalculate - kliknięcie na context GL
