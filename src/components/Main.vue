@@ -52,7 +52,8 @@
       ></v-slider>
     </v-row>
     <v-divider class="mt-2 mb-4"></v-divider>
-    <v-row class="ml-1 mb-4">Settings:</v-row>
+    <v-btn @click="clickOnCalculate">Calculate...</v-btn>
+    <v-row class="mt-4 ml-1 mb-4">Settings:</v-row>
     <v-chip
       class="mb-9"
       :text-color="backgroundColorText"
@@ -71,10 +72,17 @@
     >
       <template v-slot:append> -->
     <v-text-field
+      v-model="rect_selection"
+      class="mt-0 pt-0"
+      type="number"
+      style="width: 150px"
+      label="Sprite rectangle selection"
+    ></v-text-field>
+    <v-text-field
       v-model="max_sprites"
       class="mt-0 pt-0"
       type="number"
-      style="width: 120px"
+      style="width: 150px"
       label="Max nr of sprites"
     ></v-text-field>
     <!-- </template>
@@ -102,9 +110,8 @@
     <v-text-field
       label="Sprite rectangles"
       outlined
-      :value="rects_spr"
+      :value="rects_spr_txt"
     ></v-text-field>
-    <v-btn @click="clickOnCalculate">Calculate...</v-btn>
   </v-container>
 </template>
 
@@ -136,7 +143,9 @@ export default {
     colors_all: [],
     colors_bmp: [],
     colors_spr: [],
-    rects_spr: "",
+    rects_spr: [],
+    rect_selection: 0,
+    rects_spr_txt: "",
     slider_x: 0,
     slider_y: 0,
     slider_z: 0,
@@ -165,9 +174,9 @@ export default {
       );
     },
     // --------------------------------------------------------------------------------------------
-    // Grid - rysowanie siatki
+    // drawGrid - rysowanie siatki
     // --------------------------------------------------------------------------------------------
-    Grid: function(pixelsHires, pixelsSprites) {
+    drawGrid: function(pixelsHires, pixelsSprites) {
       // Rysujemy linie kropkowane
       // pionowe
       // ------------------------------------------------------------------------------------------
@@ -259,24 +268,54 @@ export default {
       this.colors_bmp = colors_bmp;
     },
     // --------------------------------------------------------------------------------------------
-    // Sprites - wygenerowanie sprajtów
+    // drawSprites - rysowanie sprajtów
     // --------------------------------------------------------------------------------------------
-    drawRect: function(image, x0, y0, x1, y1) {
-      // Pozioma górna
-      var dy = y0;
-      for (let dx = x0; dx < x1; dx += 1) {
-        // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-        // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-        image.data[dy * 320 * 4 + dx * 4 + 2] = 0xff;
-        image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
-      }
-      // Pozioma dolna
-      dy = y1;
-      for (let dx = x0; dx < x1; dx += 1) {
-        // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
-        // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
-        image.data[dy * 320 * 4 + dx * 4 + 2] = 0xff;
-        image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+    drawSprites: function(image) {
+      if (this.rects_spr != null) {
+        var k = this.rect_selection
+        if (this.rects_spr[k] != null) {
+        // for (let k = 0; k < this.rects_spr.length; k++) {
+          var x0 = this.rects_spr[k].x0;
+          var y0 = this.rects_spr[k].y0;
+          var x1 = this.rects_spr[k].x1;
+          var y1 = this.rects_spr[k].y1;
+
+          // Pozioma górna
+          var dy = y0;
+          for (let dx = x0; dx <= x1; dx += 2) {
+            // image.data[dy * 320 * 4 + dx * 4 + 0] = k * 0x10;
+            // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+          }
+
+          // Pozioma dolna
+          dy = y1;
+          for (let dx = x0; dx <= x1; dx += 2) {
+            // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+          }
+
+          // Pionowa lewa
+          var dx = x0;
+          for (let dy = y0; dy <= y1; dy += 2) {
+            // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+          }
+
+          // Pionowa prawa
+          dx = x1;
+          for (let dy = y0; dy <= y1; dy += 2) {
+            // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+            // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+            image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+            // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+          }
+        }
       }
     },
     // --------------------------------------------------------------------------------------------
@@ -356,22 +395,20 @@ export default {
         };
 
         rects_spr.push(newRect);
-        // console.log(newRect)
-
-        //
-        // Rysowanie prostokąta
-        //
-        this.drawRect(pixelsSprites, x0, y0, x1, y1);
       }
 
-      this.rects_spr = "";
+      // Kopiowanie do zm. globalnej
+      this.rects_spr = rects_spr;
+      console.log(this.rects_spr);
+
+      // Wygenerowanie opisu
       for (let i = 0; i < rects_spr.length; i++) {
-        this.rects_spr += rects_spr[i].i + ": ";
-        this.rects_spr += "x0=" + rects_spr[i].x0;
-        this.rects_spr += " x1=" + rects_spr[i].x1;
-        this.rects_spr += " y0=" + rects_spr[i].y0;
-        this.rects_spr += " y1=" + rects_spr[i].y1;
-        this.rects_spr += "    ";
+        this.rects_spr_txt += rects_spr[i].i + ": ";
+        this.rects_spr_txt += "x0=" + rects_spr[i].x0;
+        this.rects_spr_txt += " x1=" + rects_spr[i].x1;
+        this.rects_spr_txt += " y0=" + rects_spr[i].y0;
+        this.rects_spr_txt += " y1=" + rects_spr[i].y1;
+        this.rects_spr_txt += "    ";
       }
     },
     // --------------------------------------------------------------------------------------------
@@ -668,7 +705,11 @@ export default {
 
       // Malowanie siatki na obrazie
       // ------------------------------------------------------------------------------------------
-      this.Grid(pixelsHires, pixelsSprites);
+      this.drawGrid(pixelsHires, pixelsSprites);
+
+      // Malowanie siatki na obrazie
+      // ------------------------------------------------------------------------------------------
+      this.drawSprites(pixelsSprites);
 
       // Liczenie kolorów
       // ------------------------------------------------------------------------------------------
