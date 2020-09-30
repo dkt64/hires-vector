@@ -141,8 +141,9 @@ export default {
     colors_all: [],
     colors_bmp: [],
     colors_spr: [],
+    sprites: [],
     rects_spr: [],
-    rect_selection: 0,
+    rect_selection: -1,
     rects_spr_txt: "",
     slider_x: 0,
     slider_y: 0,
@@ -266,9 +267,9 @@ export default {
       this.colors_bmp = colors_bmp;
     },
     // --------------------------------------------------------------------------------------------
-    // drawSprites - rysowanie sprajtów
+    // drawRects - rysowanie prostokątów
     // --------------------------------------------------------------------------------------------
-    drawSprites: function(image) {
+    drawRects: function(image) {
       if (this.rects_spr != null) {
         var k1 = this.rect_selection;
         var k2;
@@ -327,9 +328,9 @@ export default {
       }
     },
     // --------------------------------------------------------------------------------------------
-    // Sprites - wygenerowanie sprajtów
+    // findRects - znaleienie prostokątów
     // --------------------------------------------------------------------------------------------
-    Sprites: function(pixelsSprites) {
+    findRects: function(pixelsSprites) {
       var rects_spr = [];
 
       // Pętla z kolorami
@@ -403,6 +404,7 @@ export default {
         };
 
         rects_spr.push(newRect);
+        // this.planes.push(plane)
       }
 
       // Kopiowanie do zm. globalnej
@@ -420,6 +422,87 @@ export default {
         rects_spr_txt += "    ";
       }
       this.rects_spr_txt = rects_spr_txt;
+    },
+    // --------------------------------------------------------------------------------------------
+    // findSprites - wygenerowanie sprajtów z prostokątów
+    // --------------------------------------------------------------------------------------------
+    // findSprites: function(pixelsSprites) {
+      // if (this.rects_spr != null) {
+      //   for (let i = 0; i < this.rects_spr.length; i++) {
+      //     var x0 = this.rects_spr[i].x0;
+      //     var y0 = this.rects_spr[i].y0;
+      //     var x1 = this.rects_spr[i].x1;
+      //     var y1 = this.rects_spr[i].y1;
+
+      //     var w_prawo
+      //     // Sprawdzamy kierunek
+      //     //
+      //     if (image.data[y0 * 320 * 4 + x0 * 4 + 0] != 0) {
+      //       w_prawo = true
+      //     } 
+      //     if (image.data[y0 * 320 * 4 + x1 * 4 + 0] != 0) {
+      //       w_prawo = false
+      //     } 
+
+      //     if (w_prawo) {
+
+      //     }
+
+      //     for (let dx = x0; dx <= x1; dx++) {
+      //       // image.data[dy * 320 * 4 + dx * 4 + 0] = k * 0x10;
+      //       // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+      //       image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+      //       // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+      //     }
+
+
+      //     var spr_x = 0;
+      //     var spr_y = 0;
+
+      //     // Dodajemy nowy rect
+      //     var newSprite = {
+      //       color_nr: i,
+      //       poz_x: spr_x,
+      //       poz_y: spr_y,
+      //       data: [24 * 21],
+      //     };
+
+
+      //     // Pozioma dolna
+      //     dy = y1;
+      //     for (let dx = x0; dx <= x1; dx += 2) {
+      //       // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+      //       // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+      //       image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+      //       // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+      //     }
+
+      //     // Pionowa lewa
+      //     var dx = x0;
+      //     for (let dy = y0; dy <= y1; dy += 2) {
+      //       // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+      //       // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+      //       image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+      //       // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+      //     }
+
+      //     // Pionowa prawa
+      //     dx = x1;
+      //     for (let dy = y0; dy <= y1; dy += 2) {
+      //       // image.data[dy * 320 * 4 + dx * 4 + 0] = 0x80;
+      //       // image.data[dy * 320 * 4 + dx * 4 + 1] = 0x80;
+      //       image.data[dy * 320 * 4 + dx * 4 + 2] = 0x80;
+      //       // image.data[dy * 320 * 4 + dx * 4 + 3] = 0xff;
+      //     }
+      //   }
+      // }
+    // },
+    // --------------------------------------------------------------------------------------------
+    // Sprites - wygenerowanie sprajtów
+    // --------------------------------------------------------------------------------------------
+    Sprites: function(pixelsSprites) {
+      this.findRects(pixelsSprites);
+      // this.findSprites(pixelsSprites);
     },
     // --------------------------------------------------------------------------------------------
     // clickOnCalculate - kliknięcie na context GL
@@ -719,7 +802,7 @@ export default {
 
       // Malowanie siatki na obrazie
       // ------------------------------------------------------------------------------------------
-      this.drawSprites(pixelsSprites);
+      this.drawRects(pixelsSprites);
 
       // Liczenie kolorów
       // ------------------------------------------------------------------------------------------
